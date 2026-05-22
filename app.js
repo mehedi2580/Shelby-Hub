@@ -264,8 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshTracker();
   setInterval(() => {
     if (document.getElementById('page-tracker').classList.contains('active')) {
-      renderFeed();
-      renderUtil();
+      refreshTracker();
     }
-  }, 5000);
+  }, 10000);
 });

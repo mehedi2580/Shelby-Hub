@@ -2,6 +2,8 @@
 
 A community-built protocol dashboard for [Shelby](https://shelby.xyz) — Web3's first cloud-grade hot storage network co-developed by Aptos Labs and Jump Crypto.
 
+> v1.1 — Official Shelby logo, auto-refresh every 10s, updated Discord link.
+
 ## Features
 
 - **Testnet tracker** — live network snapshot, read/write charts, storage growth, node grid, utilisation bars, and auto-refreshing event feed
