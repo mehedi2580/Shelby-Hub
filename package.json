@@ -1,0 +1,20 @@
+{
+  "name": "shelby-hub",
+  "version": "1.0.0",
+  "description": "Shelby Protocol community dashboard — testnet tracker, ROI calculator, docs, and developer profile",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@aptos-labs/ts-sdk": "^1.33.1",
+    "@shelby/sdk": "latest",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

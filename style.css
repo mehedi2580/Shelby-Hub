@@ -117,6 +117,7 @@ body { background: var(--bg); color: var(--text-primary); font-size: 14px; line-
   background: var(--green-light); color: var(--green-text); font-weight: 500;
 }
 .badge-blue { background: var(--accent-light); color: var(--accent); }
+.badge-warn { background: var(--yellow-light); color: var(--yellow); }
 
 .card {
   background: var(--bg-card); border: 1px solid var(--border);

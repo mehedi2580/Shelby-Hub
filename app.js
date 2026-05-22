@@ -3,7 +3,10 @@
 let drawerOpen = false;
 let rwChart, storageChart, nodeChart, roiChart;
 
-// ── Navigation ──────────────────────────────────────────────
+// ── API base (same origin when served by server.js) ──────────
+const API = "/api";
+
+// ── Navigation ───────────────────────────────────────────────
 function toggleDrawer() {
   drawerOpen = !drawerOpen;
   document.getElementById('drawer').classList.toggle('open', drawerOpen);
@@ -29,9 +32,45 @@ function chartColors() {
     grid: isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
   };
 }
+function fmtBytes(b) {
+  if (!b) return '—';
+  if (b >= 1e12) return (b / 1e12).toFixed(2) + ' TB';
+  if (b >= 1e9)  return (b / 1e9).toFixed(1)  + ' GB';
+  if (b >= 1e6)  return (b / 1e6).toFixed(1)  + ' MB';
+  return b + ' B';
+}
+function shortAddr(addr) {
+  if (!addr || addr.length < 12) return addr;
+  return addr.slice(0, 6) + '…' + addr.slice(-4);
+}
 
-// ── Node data ─────────────────────────────────────────────────
-const NODES = [
+// ── State: real vs simulated ──────────────────────────────────
+let isLive = false; // flips to true when /api/health succeeds
+
+async function tryFetch(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return r.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+// ── Status badge helper ───────────────────────────────────────
+function setLiveBadge(live) {
+  isLive = live;
+  const dot = document.querySelector('.live-dot');
+  const badge = document.querySelector('#tracker-badge');
+  if (dot) dot.style.background = live ? '#1D9E75' : '#BA7517';
+  if (badge) {
+    badge.textContent = live ? 'Live' : 'Simulated';
+    badge.className = live ? 'badge' : 'badge badge-warn';
+  }
+}
+
+// ── Fallback node data ────────────────────────────────────────
+const FALLBACK_NODES = [
   { name: 'SP-Alpha-01',   region: 'US-East',    lat: 38, status: 'online'  },
   { name: 'SP-Beta-07',    region: 'EU-West',    lat: 22, status: 'online'  },
   { name: 'SP-Gamma-03',   region: 'AP-South',   lat: 41, status: 'online'  },
@@ -42,55 +81,142 @@ const NODES = [
   { name: 'SP-Theta-11',   region: 'US-Central', lat: 33, status: 'offline' },
 ];
 
+// Shelbynet has 16 SP nodes per docs
+const SHELBYNET_NODES = Array.from({ length: 16 }, (_, i) => ({
+  name: `SP-Node-${String(i + 1).padStart(2, '0')}`,
+  region: ['US-East','EU-West','AP-South','US-West','EU-North','AP-East','SA-East','US-Central',
+           'US-East','EU-West','AP-South','US-West','EU-North','AP-East','SA-East','US-Central'][i],
+  lat: [38,22,41,29,18,55,67,33,40,25,38,32,20,58,70,35][i],
+  status: i < 14 ? 'online' : (i === 14 ? 'syncing' : 'offline'),
+}));
+
 const EVENTS = [
-  ['ti-upload',          'Blob write confirmed',   'SP-Alpha-01'],
-  ['ti-download',        'Parallel read served',   'SP-Beta-07'],
-  ['ti-shield-check',    'Audit challenge passed', 'SP-Gamma-03'],
-  ['ti-coin',            'Micropayment settled',   'SP-Delta-12'],
-  ['ti-arrows-exchange', 'Erasure chunk rebuilt',  'SP-Eta-02'],
-  ['ti-network',         'New placement group',    'SP-Zeta-09'],
-  ['ti-lock',            'Access token verified',  'SP-Alpha-01'],
-  ['ti-database',        'Merkle root committed',  'SP-Beta-07'],
+  ['ti-upload',          'Blob write confirmed',   'on-chain'],
+  ['ti-download',        'Parallel read served',   'RPC node'],
+  ['ti-shield-check',    'Audit challenge passed', 'smart contract'],
+  ['ti-coin',            'Micropayment settled',   'RPC node'],
+  ['ti-arrows-exchange', 'Erasure chunk rebuilt',  'SP node'],
+  ['ti-network',         'New placement group',    'smart contract'],
+  ['ti-lock',            'Access token verified',  'RPC node'],
+  ['ti-database',        'Merkle root committed',  'smart contract'],
 ];
 
-// ── Metrics ───────────────────────────────────────────────────
-function renderMetrics() {
-  const online = NODES.filter(n => n.status === 'online').length;
+// ── Render metrics ────────────────────────────────────────────
+function renderMetrics(networkData, nodeData) {
+  const online = (nodeData || FALLBACK_NODES).filter(n => n.status === 'online').length;
+  const total  = (nodeData || FALLBACK_NODES).length;
+
+  const totalBytes  = networkData?.totalBytes  || 0;
+  const totalBlobs  = networkData?.totalBlobs  || 0;
+  const capBytes    = networkData?.storageCapacityBytes || 10 * 1024 ** 4;
+  const usedPct     = totalBytes ? ((totalBytes / capBytes) * 100).toFixed(1) : null;
+
   const items = [
-    { label: 'Storage used',   val: (rnd(380, 430) / 10).toFixed(1) + ' TB', sub: '+2.3 GB',    cls: '' },
-    { label: 'Active nodes',   val: online + ' / ' + NODES.length,            sub: '1 syncing',   cls: 'warn' },
-    { label: 'Reads (24h)',    val: rnd(12000, 18000).toLocaleString(),        sub: '+8%',         cls: '' },
-    { label: 'Writes (24h)',   val: rnd(3000, 6000).toLocaleString(),          sub: '+3%',         cls: '' },
-    { label: 'Avg latency',    val: rnd(68, 130) + ' ms',                     sub: 'sub-second',  cls: '' },
-    { label: 'Audit pass rate',val: rnd(94, 99) + '%',                        sub: 'healthy',     cls: '' },
-    { label: 'Blobs stored',   val: rnd(2100, 2800).toLocaleString(),          sub: '+41 new',     cls: '' },
-    { label: 'Network uptime', val: (rnd(990, 999) / 10).toFixed(1) + '%',    sub: 'testnet',     cls: '' },
+    {
+      label: 'Storage used',
+      val:   totalBytes ? fmtBytes(totalBytes) : rnd(380, 430) / 10 + ' TB',
+      sub:   usedPct ? usedPct + '% of 10 TiB' : '~10 TiB capacity',
+      cls:   '',
+      live:  !!totalBytes,
+    },
+    {
+      label: 'Active nodes',
+      val:   online + ' / ' + total,
+      sub:   'shelbynet: 16 SPs',
+      cls:   '',
+      live:  !!nodeData,
+    },
+    {
+      label: 'Blobs stored',
+      val:   totalBlobs ? totalBlobs.toLocaleString() : rnd(2100, 2800).toLocaleString(),
+      sub:   totalBlobs ? 'on-chain count' : 'estimated',
+      cls:   '',
+      live:  !!totalBlobs,
+    },
+    {
+      label: 'Network',
+      val:   networkData?.network || 'TESTNET',
+      sub:   'Early access',
+      cls:   '',
+      live:  !!networkData,
+    },
+    {
+      label: 'Avg latency',
+      val:   rnd(68, 130) + ' ms',
+      sub:   'sub-second',
+      cls:   '',
+      live:  false,
+    },
+    {
+      label: 'Audit pass rate',
+      val:   rnd(94, 99) + '%',
+      sub:   'simulated',
+      cls:   '',
+      live:  false,
+    },
+    {
+      label: 'Contract',
+      val:   networkData ? shortAddr(networkData.contractAddress) : '0x85fd…8e6a',
+      sub:   'Aptos testnet',
+      cls:   '',
+      live:  !!networkData,
+    },
+    {
+      label: 'RPC',
+      val:   networkData?.rpcUrl ? 'Connected' : 'testnet',
+      sub:   'api.testnet.shelby.xyz',
+      cls:   '',
+      live:  !!networkData?.rpcUrl,
+    },
   ];
+
   document.getElementById('metrics').innerHTML = items.map(c => `
-    <div class="metric">
-      <div class="metric-label">${c.label}</div>
+    <div class="metric" title="${c.live ? '✅ Live on-chain data' : '⚠️ Simulated data'}">
+      <div class="metric-label">${c.label} ${c.live ? '<span style="color:var(--green);font-size:9px">●LIVE</span>' : ''}</div>
       <div class="metric-val">${c.val}</div>
       <div class="metric-sub ${c.cls}">${c.sub}</div>
     </div>`).join('');
 }
 
-// ── Charts ────────────────────────────────────────────────────
-function renderCharts() {
+// ── Render charts ─────────────────────────────────────────────
+function renderCharts(historyData) {
   const { text: tc, grid: gc } = chartColors();
 
-  // Read/write 24h
-  const labels = [], reads = [], writes = [];
+  // Use real history or generate simulated
+  let slabels, svals;
+  if (historyData && historyData.length > 0) {
+    slabels = historyData.map(d => {
+      const dt = new Date(d.date);
+      return (dt.getMonth() + 1) + '/' + dt.getDate();
+    });
+    // Cumulative blob count
+    let cum = 0;
+    svals = historyData.map(d => { cum += d.blobs; return cum; });
+  } else {
+    slabels = []; svals = [];
+    let base = 32;
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      slabels.push((d.getMonth() + 1) + '/' + d.getDate());
+      base += rnd(1, 5);
+      svals.push(+base.toFixed(1));
+    }
+  }
+
+  // 24h read/write (always simulated — no public read-rate API)
+  const rwLabels = [], reads = [], writes = [];
   for (let i = 23; i >= 0; i--) {
     const h = new Date(Date.now() - i * 3600000);
-    labels.push(h.getHours().toString().padStart(2, '0') + ':00');
+    rwLabels.push(h.getHours().toString().padStart(2, '0') + ':00');
     reads.push(rnd(400, 900));
     writes.push(rnd(80, 280));
   }
+
   if (rwChart) rwChart.destroy();
   rwChart = new Chart(document.getElementById('rwChart'), {
     type: 'line',
     data: {
-      labels,
+      labels: rwLabels,
       datasets: [
         { label: 'Reads',  data: reads,  borderColor: '#378ADD', backgroundColor: 'rgba(55,138,221,0.07)', borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: true },
         { label: 'Writes', data: writes, borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.07)', borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: true, borderDash: [4, 3] },
@@ -106,36 +232,45 @@ function renderCharts() {
     }
   });
 
-  // Storage growth
-  const slabels = [], svals = [];
-  let base = 32;
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
-    slabels.push((d.getMonth() + 1) + '/' + d.getDate());
-    base += rnd(1, 5);
-    svals.push(+base.toFixed(1));
-  }
   if (storageChart) storageChart.destroy();
+  const isRealStorage = historyData && historyData.length > 0;
   storageChart = new Chart(document.getElementById('storageChart'), {
     type: 'line',
     data: {
       labels: slabels,
-      datasets: [{ label: 'TB', data: svals, borderColor: '#7F77DD', backgroundColor: 'rgba(127,119,221,0.1)', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: true }]
+      datasets: [{
+        label: isRealStorage ? 'Blobs (cumulative)' : 'TB used',
+        data:  svals,
+        borderColor: '#7F77DD', backgroundColor: 'rgba(127,119,221,0.1)',
+        borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: true
+      }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        title: isRealStorage
+          ? { display: true, text: '● Live', color: '#1D9E75', font: { size: 10 }, padding: { bottom: 4 } }
+          : { display: false }
+      },
       scales: {
         x: { ticks: { color: tc, font: { size: 9 } }, grid: { color: gc } },
-        y: { ticks: { color: tc, font: { size: 9 }, callback: v => v + ' TB' }, grid: { color: gc } },
+        y: {
+          ticks: {
+            color: tc, font: { size: 9 },
+            callback: v => isRealStorage ? v + ' blobs' : v + ' TB'
+          },
+          grid: { color: gc }
+        },
       }
     }
   });
 
   // Node donut
-  const on = NODES.filter(n => n.status === 'online').length;
-  const sy = NODES.filter(n => n.status === 'syncing').length;
-  const of = NODES.filter(n => n.status === 'offline').length;
+  const nodes = SHELBYNET_NODES;
+  const on = nodes.filter(n => n.status === 'online').length;
+  const sy = nodes.filter(n => n.status === 'syncing').length;
+  const of = nodes.filter(n => n.status === 'offline').length;
   if (nodeChart) nodeChart.destroy();
   nodeChart = new Chart(document.getElementById('nodeChart'), {
     type: 'doughnut',
@@ -152,20 +287,24 @@ function renderCharts() {
   ].map(x => `<span><span class="legend-sq-box" style="background:${x.c};display:inline-block"></span>${x.l} ${x.n}</span>`).join('');
 }
 
-// ── Nodes ────────────────────────────────────────────────────
-function renderNodes() {
-  document.getElementById('nodeGrid').innerHTML = NODES.map(n => {
+// ── Render nodes ──────────────────────────────────────────────
+function renderNodes(liveNodes) {
+  const nodes = liveNodes && liveNodes.length > 0 ? liveNodes : SHELBYNET_NODES;
+  document.getElementById('nodeGrid').innerHTML = nodes.map(n => {
     const cls = n.status === 'online' ? 'on' : n.status === 'syncing' ? 'syn' : 'off';
+    const addrLabel = n.address && n.address.startsWith('0x')
+      ? shortAddr(n.address)
+      : n.name || n.address;
     return `<div class="node-card">
-      <div class="node-name"><span class="dot dot-${cls}" aria-hidden="true"></span>${n.name}</div>
-      <div class="node-meta">${n.region} · ${n.lat}ms avg</div>
-      <div class="node-meta">${rnd(800, 2400).toLocaleString()} chunks</div>
+      <div class="node-name"><span class="dot dot-${cls}" aria-hidden="true"></span>${addrLabel}</div>
+      <div class="node-meta">${n.region} · ${n.lat || '—'}ms avg</div>
+      <div class="node-meta">${n.stake ? n.stake.toLocaleString() + ' staked' : rnd(800, 2400).toLocaleString() + ' chunks'}</div>
       <span class="pill pill-${cls}">${n.status}</span>
     </div>`;
   }).join('');
 }
 
-// ── Utilisation bars ─────────────────────────────────────────
+// ── Render util bars ──────────────────────────────────────────
 function renderUtil() {
   const bars = [
     { l: 'Fiber network',  p: rnd(55, 82) },
@@ -181,25 +320,70 @@ function renderUtil() {
     </div>`).join('');
 }
 
-// ── Live feed ─────────────────────────────────────────────────
-function renderFeed() {
-  const shuffled = [...EVENTS].sort(() => Math.random() - 0.5).slice(0, 5);
-  document.getElementById('eventFeed').innerHTML =
-    '<p class="section-hd" style="margin-bottom:8px">Live events</p>' +
-    shuffled.map((e, i) => `
+// ── Render live event feed ────────────────────────────────────
+function renderFeed(recentTxns) {
+  let rows;
+  if (recentTxns && recentTxns.length > 0) {
+    rows = recentTxns.slice(0, 6).map(t => {
+      const ago = Math.round((Date.now() - new Date(t.timestamp).getTime()) / 1000);
+      const icon = t.fn?.includes('register') ? 'ti-upload'
+                 : t.fn?.includes('delete')   ? 'ti-trash'
+                 : t.fn?.includes('audit')    ? 'ti-shield-check'
+                 : 'ti-database';
+      return `<div class="feed-row">
+        <i class="ti ${icon} feed-icon" aria-hidden="true"></i>
+        <span class="feed-text">${t.fn || 'transaction'} <span class="feed-node">${shortAddr(t.sender)}</span></span>
+        <span class="feed-time">${secsAgo(Math.max(ago, 1))}</span>
+      </div>`;
+    }).join('');
+  } else {
+    const shuffled = [...EVENTS].sort(() => Math.random() - 0.5).slice(0, 5);
+    rows = shuffled.map((e, i) => `
       <div class="feed-row">
         <i class="ti ${e[0]} feed-icon" aria-hidden="true"></i>
         <span class="feed-text">${e[1]} <span class="feed-node">${e[2]}</span></span>
         <span class="feed-time">${secsAgo(rnd(i * 9 + 2, i * 9 + 40))}</span>
       </div>`).join('');
+  }
+  document.getElementById('eventFeed').innerHTML =
+    `<p class="section-hd" style="margin-bottom:8px">
+       ${recentTxns?.length ? '● Live transactions' : 'Live events'}
+     </p>` + rows;
 }
 
-function refreshTracker() {
-  renderMetrics();
-  renderCharts();
-  renderNodes();
+// ── Main refresh ──────────────────────────────────────────────
+async function refreshTracker() {
+  // 1. Check if server API is available
+  const health = await tryFetch(`${API}/health`);
+  const serverUp = !!health?.ok;
+  setLiveBadge(serverUp);
+
+  let networkData = null, historyData = null, nodeData = null, recentTxns = null;
+
+  if (serverUp) {
+    // 2. Fetch all real data in parallel
+    [networkData, historyData, nodeData, recentTxns] = await Promise.all([
+      tryFetch(`${API}/network`).then(r => r?.data),
+      tryFetch(`${API}/blobs/history`).then(r => r?.data),
+      tryFetch(`${API}/nodes`).then(r => r?.data),
+      tryFetch(`${API}/blobs/recent`).then(r => r?.data),
+    ]);
+  }
+
+  // 3. Render everything (graceful fallback to simulated if API call failed)
+  renderMetrics(networkData, nodeData);
+  renderCharts(historyData);
+  renderNodes(nodeData);
   renderUtil();
-  renderFeed();
+  renderFeed(recentTxns);
+
+  // Update footnote
+  const note = document.getElementById('tracker-note');
+  if (note) {
+    note.textContent = serverUp
+      ? `✅ Live data from api.testnet.shelby.xyz — last updated ${new Date().toLocaleTimeString()}`
+      : `⚠️ Server offline — showing simulated data. Run: npm start`;
+  }
 }
 
 // ── ROI Calculator ────────────────────────────────────────────
@@ -261,7 +445,17 @@ function calcROI() {
 
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Add id to footnote for live updates
+  const footnote = document.querySelector('#page-tracker .footnote');
+  if (footnote) footnote.id = 'tracker-note';
+
+  // Add id to tracker badge
+  const badge = document.querySelector('#page-tracker .badge');
+  if (badge) badge.id = 'tracker-badge';
+
   refreshTracker();
+
+  // Auto-refresh every 10s when tracker page is visible
   setInterval(() => {
     if (document.getElementById('page-tracker').classList.contains('active')) {
       refreshTracker();

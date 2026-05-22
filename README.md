@@ -93,16 +93,45 @@ Then open [http://localhost:3000](http://localhost:3000)
 
 ## Tech stack
 
-- Plain HTML, CSS, JavaScript — no framework, no build step
+- Plain HTML, CSS, JavaScript frontend — no framework, no build step
+- **Express.js** backend API server — bridges browser to Shelby SDK
+- **`@shelby/sdk`** — official Shelby TypeScript SDK (Node.js)
+- **`@aptos-labs/ts-sdk`** — Aptos blockchain client
 - [Chart.js](https://www.chartjs.org/) — charts and graphs
 - [Tabler Icons](https://tabler.io/icons) — icon set
 - [DM Sans](https://fonts.google.com/specimen/DM+Sans) — font
 - Vercel — hosting
 
-## Notes
+## Architecture
 
-- Testnet data is currently **simulated**. Real-time data will be connected once Shelby opens its public RPC endpoints at `api.testnet.shelby.xyz`
-- ROI estimates are illustrative only — not financial advice
+```
+Browser (index.html + app.js)
+        ↕ fetch /api/*
+Express server (server.js)
+        ↕ @shelby/sdk
+Shelby RPC  (api.testnet.shelby.xyz)
+        ↕ @aptos-labs/ts-sdk
+Aptos Indexer  (api.testnet.aptoslabs.com)
+```
+
+The tracker shows **live data** when the server is running, and gracefully falls back to simulated data when offline. Each metric card shows a green `●LIVE` dot when sourced from the real network.
+
+## Setup & run
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. (Optional) set your API key as env var instead of hardcoding
+export SHELBY_API_KEY=aptoslabs_xxxxx
+
+# 3. Start the server
+npm start
+# → http://localhost:3000
+
+# Development mode (auto-restarts on file changes)
+npm run dev
+```
 
 ## Developer
 

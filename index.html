@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Shelby Hub — Protocol Dashboard</title>
   <meta name="description" content="Shelby protocol hub: testnet tracker, node ROI calculator, protocol docs, and developer profile." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230A0A0A'/><path d='M9 11C9 9.343 10.343 8 12 8H18a3.5 3.5 0 0 1 0 7H12a3.5 3.5 0 0 0 0 7h7' stroke='%2300E5BF' stroke-width='2.5' stroke-linecap='round' fill='none'/></svg>" />
+  <link rel="icon" href="https://avatars.githubusercontent.com/u/219037914?s=32&v=4" type="image/png" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
@@ -16,11 +16,7 @@
   <nav class="navbar">
     <div class="nav-brand">
       <div class="nav-logo">
-        <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Shelby logo">
-          <rect width="34" height="34" rx="9" fill="#0A0A0A"/>
-          <!-- Top arc: left cap → right -->
-          <path d="M10 12.5C10 10.567 11.567 9 13.5 9H20a4 4 0 0 1 0 8h-6a4 4 0 0 0 0 8h6.5" stroke="#00E5BF" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-        </svg>
+        <img src="https://avatars.githubusercontent.com/u/219037914?s=96&v=4" width="34" height="34" alt="Shelby logo" style="border-radius:9px;display:block;" />
       </div>
       <div>
         <div class="nav-title">Shelby Hub</div>
@@ -61,9 +57,14 @@
         <span class="page-title">Testnet tracker</span>
         <span class="badge">Early access</span>
       </div>
-      <button class="refresh-btn" onclick="refreshTracker()">
-        <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
-      </button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a class="refresh-btn" href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="text-decoration:none">
+          <i class="ti ti-radar" aria-hidden="true"></i> Explorer
+        </a>
+        <button class="refresh-btn" onclick="refreshTracker()">
+          <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
+        </button>
+      </div>
     </div>
 
     <p class="section-hd">Network snapshot</p>
@@ -100,7 +101,7 @@
         <div class="node-legend" id="nodeLegend"></div>
       </div>
     </div>
-    <p class="footnote"><i class="ti ti-info-circle" aria-hidden="true"></i> Simulated testnet data — real API integration available when Shelby opens public RPC endpoints.</p>
+    <p class="footnote" id="tracker-note"><i class="ti ti-info-circle" aria-hidden="true"></i> Starting up — checking for live data from api.testnet.shelby.xyz…</p>
   </div>
 
   <!-- ROI CALCULATOR -->
@@ -193,11 +194,46 @@
       <div class="arch-item"><div class="arch-num">2</div><div><div class="arch-title">Shelby RPC servers</div><div class="arch-desc">Client gateway. Accepts S3-compatible reads/writes, handles Clay erasure encoding, manages micropayment sessions, and returns cryptographic provenance receipts.</div></div></div>
       <div class="arch-item"><div class="arch-num">3</div><div><div class="arch-title">Storage provider nodes</div><div class="arch-desc">Decentralized nodes (Cavalier by Jump Crypto). Store erasure-coded chunks, respond to audit challenges, and serve data over the private fiber network.</div></div></div>
     </div>
-    <p class="section-hd">Quick links</p>
+    <p class="section-hd">Developer resources</p>
     <div class="arch-row">
+      <a class="arch-item" href="https://github.com/shelby/shelby-quickstart" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#EAF3DE"><i class="ti ti-brand-github" style="color:#3B6D11;font-size:14px" aria-hidden="true"></i></div>
+        <div style="flex:1">
+          <div class="arch-title">shelby-quickstart <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div>
+          <div class="arch-desc">Simple samples to start serving with Shelby. Upload, list &amp; download blobs via CLI. Node v22+, TypeScript.</div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--text-tertiary)">
+            <span><i class="ti ti-star" style="font-size:11px" aria-hidden="true"></i> 284</span>
+            <span><i class="ti ti-git-fork" style="font-size:11px" aria-hidden="true"></i> 189</span>
+            <span style="color:#3178C6">TypeScript</span>
+          </div>
+        </div>
+      </a>
+      <a class="arch-item" href="https://github.com/shelby/examples" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#E6F1FB"><i class="ti ti-brand-github" style="color:#185FA5;font-size:14px" aria-hidden="true"></i></div>
+        <div style="flex:1">
+          <div class="arch-title">shelby/examples <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div>
+          <div class="arch-desc">5 example apps: AI image generation, cross-chain accounts, blob upload/download/list. Turborepo monorepo.</div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--text-tertiary)">
+            <span><i class="ti ti-star" style="font-size:11px" aria-hidden="true"></i> 112</span>
+            <span><i class="ti ti-git-fork" style="font-size:11px" aria-hidden="true"></i> 55</span>
+            <span style="color:#3178C6">TypeScript</span>
+          </div>
+        </div>
+      </a>
+      <a class="arch-item" href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#F0EDFE"><i class="ti ti-radar" style="color:#3C3489;font-size:14px" aria-hidden="true"></i></div>
+        <div style="flex:1">
+          <div class="arch-title">Shelby Explorer — shelbynet <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div>
+          <div class="arch-desc">Live block explorer for Shelbynet. Browse blobs, storage providers, transactions, and on-chain audit proofs.</div>
+          <div style="display:flex;gap:8px;margin-top:6px;font-size:11px">
+            <span style="background:var(--green-light);color:var(--green-text);padding:1px 7px;border-radius:99px;font-weight:500">● Live</span>
+            <span style="color:var(--text-tertiary)">explorer.shelby.xyz</span>
+          </div>
+        </div>
+      </a>
       <a class="arch-item" href="https://docs.shelby.xyz/protocol/quickstart" target="_blank" rel="noopener" style="text-decoration:none">
-        <div class="arch-icon-circle" style="background:#EAF3DE"><i class="ti ti-player-play" style="color:#3B6D11;font-size:13px" aria-hidden="true"></i></div>
-        <div><div class="arch-title">Quickstart guide <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div><div class="arch-desc">Upload your first blob and explore the S3-compatible SDK.</div></div>
+        <div class="arch-icon-circle" style="background:#FEF3D7"><i class="ti ti-player-play" style="color:#BA7517;font-size:13px" aria-hidden="true"></i></div>
+        <div><div class="arch-title">Quickstart guide <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div><div class="arch-desc">Step-by-step docs: config, faucet, upload, list, download your first blob.</div></div>
       </a>
       <a class="arch-item" href="https://docs.shelby.xyz/protocol/architecture/overview" target="_blank" rel="noopener" style="text-decoration:none">
         <div class="arch-icon-circle" style="background:#E6F1FB"><i class="ti ti-layout-distribute-horizontal" style="color:#185FA5;font-size:13px" aria-hidden="true"></i></div>
@@ -210,7 +246,7 @@
     </div>
     <div class="status-box">
       <p class="status-box-title">Current status</p>
-      <p class="status-box-text">Shelby is live on <strong>testnet (Early Access)</strong> as of early 2026. Main testnet API: <code>api.testnet.shelby.xyz</code>. Full production expected later in 2026.</p>
+      <p class="status-box-text">Shelby is live on <strong>Shelbynet (Early Access)</strong> as of early 2026. Main API: <code>api.testnet.shelby.xyz</code>. Browse live activity at <a href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="color:var(--accent)">explorer.shelby.xyz/shelbynet</a>. Full production expected later in 2026.</p>
     </div>
   </div>
 
