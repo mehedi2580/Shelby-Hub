@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shelby Hub — Protocol Dashboard</title>
+  <meta name="description" content="Shelby protocol hub: testnet tracker, node ROI calculator, protocol docs, and developer profile." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23185FA5'/><text x='50%' y='54%' text-anchor='middle' dominant-baseline='middle' fill='white' font-size='13' font-family='system-ui' font-weight='500'>SH</text></svg>" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="nav-logo">SH</div>
+      <div>
+        <div class="nav-title">Shelby hub</div>
+        <div class="nav-subtitle">Protocol dashboard</div>
+      </div>
+    </div>
+    <button class="hamburger" onclick="toggleDrawer()" aria-label="Toggle navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-inner">
+      <div class="drawer-label">Navigation</div>
+      <div class="nav-items">
+        <button class="nav-item active" onclick="showPage('tracker', this)">
+          <i class="ti ti-chart-bar" aria-hidden="true"></i> Testnet tracker
+        </button>
+        <button class="nav-item" onclick="showPage('calculator', this)">
+          <i class="ti ti-calculator" aria-hidden="true"></i> Node ROI calculator
+        </button>
+        <button class="nav-item" onclick="showPage('learn', this)">
+          <i class="ti ti-book" aria-hidden="true"></i> Learn about Shelby
+        </button>
+        <div class="nav-divider"></div>
+        <button class="nav-item" onclick="showPage('developer', this)">
+          <i class="ti ti-user-circle" aria-hidden="true"></i> About developer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TESTNET TRACKER -->
+  <div id="page-tracker" class="page active">
+    <div class="top-row">
+      <div class="top-row-left">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="page-title">Testnet tracker</span>
+        <span class="badge">Early access</span>
+      </div>
+      <button class="refresh-btn" onclick="refreshTracker()">
+        <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
+      </button>
+    </div>
+
+    <p class="section-hd">Network snapshot</p>
+    <div class="metric-grid" id="metrics"></div>
+
+    <div class="two-col">
+      <div class="card">
+        <p class="section-hd" style="margin-bottom:10px">Read/write activity (24h)</p>
+        <div class="chart-wrap"><canvas id="rwChart" role="img" aria-label="Line chart of 24h read and write activity on Shelby testnet">24h read/write data.</canvas></div>
+        <div class="chart-legend">
+          <span><span class="legend-sq" style="background:#378ADD"></span>Reads</span>
+          <span><span class="legend-sq" style="background:#1D9E75"></span>Writes</span>
+        </div>
+      </div>
+      <div class="card">
+        <p class="section-hd" style="margin-bottom:10px">Storage growth (14d)</p>
+        <div class="chart-wrap"><canvas id="storageChart" role="img" aria-label="Area chart of cumulative storage on Shelby testnet over 14 days">Storage growth data.</canvas></div>
+      </div>
+    </div>
+
+    <p class="section-hd">Network utilisation</p>
+    <div class="card" style="margin-bottom:1.25rem" id="utilBars"></div>
+
+    <p class="section-hd">Storage provider nodes</p>
+    <div class="node-grid" id="nodeGrid"></div>
+
+    <div class="two-col">
+      <div class="card" id="eventFeed"><p class="section-hd" style="margin-bottom:8px">Live events</p></div>
+      <div class="card">
+        <p class="section-hd" style="margin-bottom:10px">Node status</p>
+        <div style="position:relative;width:100%;height:150px">
+          <canvas id="nodeChart" role="img" aria-label="Donut chart of node status breakdown">Node breakdown.</canvas>
+        </div>
+        <div class="node-legend" id="nodeLegend"></div>
+      </div>
+    </div>
+    <p class="footnote"><i class="ti ti-info-circle" aria-hidden="true"></i> Simulated testnet data — real API integration available when Shelby opens public RPC endpoints.</p>
+  </div>
+
+  <!-- ROI CALCULATOR -->
+  <div id="page-calculator" class="page">
+    <div class="top-row">
+      <div class="top-row-left">
+        <span class="page-title">Node ROI calculator</span>
+        <span class="badge badge-blue">Estimate</span>
+      </div>
+    </div>
+    <p class="intro-text">Estimate your potential earnings as a Shelby Storage Provider node operator. Adjust the sliders to match your setup.</p>
+
+    <div class="two-col">
+      <div>
+        <p class="section-hd">Your configuration</p>
+        <div class="roi-form">
+          <div class="roi-row">
+            <span class="roi-label">Storage capacity (TB)</span>
+            <div class="roi-input-row"><input type="range" min="1" max="200" value="10" step="1" id="storage-tb" oninput="calcROI()"><span class="roi-val" id="storage-tb-out">10 TB</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">Network bandwidth (Gbps)</span>
+            <div class="roi-input-row"><input type="range" min="1" max="100" value="10" step="1" id="bandwidth" oninput="calcROI()"><span class="roi-val" id="bandwidth-out">10 Gbps</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">Stake amount (APT)</span>
+            <div class="roi-input-row"><input type="range" min="100" max="50000" value="5000" step="100" id="stake" oninput="calcROI()"><span class="roi-val" id="stake-out">5,000 APT</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">APT price (USD)</span>
+            <div class="roi-input-row"><input type="range" min="1" max="50" value="8" step="1" id="apt-price" oninput="calcROI()"><span class="roi-val" id="apt-price-out">$8</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">Utilisation rate (%)</span>
+            <div class="roi-input-row"><input type="range" min="10" max="100" value="60" step="5" id="util-rate" oninput="calcROI()"><span class="roi-val" id="util-rate-out">60%</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">Hardware cost (USD/mo)</span>
+            <div class="roi-input-row"><input type="range" min="50" max="2000" value="300" step="50" id="hw-cost" oninput="calcROI()"><span class="roi-val" id="hw-cost-out">$300</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="section-hd">Estimated returns</p>
+        <div class="roi-result-grid">
+          <div class="roi-result"><div class="roi-result-label">Monthly revenue</div><div class="roi-result-val pos" id="r-monthly">—</div></div>
+          <div class="roi-result"><div class="roi-result-label">Monthly profit</div><div class="roi-result-val pos" id="r-profit">—</div></div>
+          <div class="roi-result"><div class="roi-result-label">Annual revenue</div><div class="roi-result-val pos" id="r-annual">—</div></div>
+          <div class="roi-result"><div class="roi-result-label">APY estimate</div><div class="roi-result-val pos" id="r-apy">—</div></div>
+        </div>
+        <div class="roi-result" style="margin-bottom:1rem"><div class="roi-result-label">Break-even (months)</div><div class="roi-result-val" id="r-breakeven">—</div></div>
+        <p class="section-hd" style="margin-bottom:10px">12-month profit projection</p>
+        <div style="position:relative;width:100%;height:160px">
+          <canvas id="roiChart" role="img" aria-label="Bar chart showing 12-month cumulative profit projection">12-month projection.</canvas>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <p class="footnote"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Estimates only. Actual earnings depend on network demand, token price, and protocol parameters. Not financial advice.</p>
+  </div>
+
+  <!-- LEARN -->
+  <div id="page-learn" class="page">
+    <div class="top-row">
+      <div class="top-row-left"><span class="page-title">Learn about Shelby</span></div>
+    </div>
+    <div class="info-hero">
+      <div class="info-hero-title">Web3's first cloud-grade hot storage protocol</div>
+      <div class="info-hero-sub">Shelby is co-developed by Aptos Labs and Jump Crypto. It delivers sub-second reads, token-gated access, and monetizable data for AI, streaming, and real-time Web3 applications — competitive with AWS S3 but fully decentralized.</div>
+    </div>
+    <p class="section-hd">Official links</p>
+    <div class="link-row">
+      <a class="link-btn" href="https://shelby.xyz" target="_blank" rel="noopener"><i class="ti ti-globe" aria-hidden="true"></i> shelby.xyz</a>
+      <a class="link-btn" href="https://docs.shelby.xyz/protocol" target="_blank" rel="noopener"><i class="ti ti-file-text" aria-hidden="true"></i> Documentation</a>
+      <a class="link-btn" href="https://x.com/shelbyserves" target="_blank" rel="noopener"><i class="ti ti-brand-x" aria-hidden="true"></i> X / Twitter</a>
+      <a class="link-btn" href="https://discord.gg/shelby" target="_blank" rel="noopener"><i class="ti ti-brand-discord" aria-hidden="true"></i> Discord</a>
+    </div>
+    <p class="section-hd">Key features</p>
+    <div class="info-grid">
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-bolt" aria-hidden="true"></i></div><div class="info-card-title">Sub-second reads</div><div class="info-card-desc">Private fiber mesh enables CDN-grade latency with full decentralization.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-coin" aria-hidden="true"></i></div><div class="info-card-title">Incentivized reads</div><div class="info-card-desc">Nodes earn rewards for serving data — not just storing it.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-lock" aria-hidden="true"></i></div><div class="info-card-title">Token-gated access</div><div class="info-card-desc">Embed access rules at the protocol level. Pay-per-view or subscription models.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-shield-check" aria-hidden="true"></i></div><div class="info-card-title">Cryptographic proofs</div><div class="info-card-desc">Clay erasure coding + on-chain Aptos verification for data integrity.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-network" aria-hidden="true"></i></div><div class="info-card-title">Cross-chain ready</div><div class="info-card-desc">Supports Aptos, Solana, Ethereum L2s, Cosmos, and more.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-brand-aws" aria-hidden="true"></i></div><div class="info-card-title">S3-compatible API</div><div class="info-card-desc">Drop-in replacement for AWS S3 — minimal migration effort for developers.</div></div>
+    </div>
+    <p class="section-hd">How it works</p>
+    <div class="arch-row">
+      <div class="arch-item"><div class="arch-num">1</div><div><div class="arch-title">Aptos smart contracts</div><div class="arch-desc">On-chain source of truth. Manages blob metadata, placement groups, cryptographic commitments, auditing logic, and slashing conditions.</div></div></div>
+      <div class="arch-item"><div class="arch-num">2</div><div><div class="arch-title">Shelby RPC servers</div><div class="arch-desc">Client gateway. Accepts S3-compatible reads/writes, handles Clay erasure encoding, manages micropayment sessions, and returns cryptographic provenance receipts.</div></div></div>
+      <div class="arch-item"><div class="arch-num">3</div><div><div class="arch-title">Storage provider nodes</div><div class="arch-desc">Decentralized nodes (Cavalier by Jump Crypto). Store erasure-coded chunks, respond to audit challenges, and serve data over the private fiber network.</div></div></div>
+    </div>
+    <p class="section-hd">Quick links</p>
+    <div class="arch-row">
+      <a class="arch-item" href="https://docs.shelby.xyz/protocol/quickstart" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#EAF3DE"><i class="ti ti-player-play" style="color:#3B6D11;font-size:13px" aria-hidden="true"></i></div>
+        <div><div class="arch-title">Quickstart guide <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div><div class="arch-desc">Upload your first blob and explore the S3-compatible SDK.</div></div>
+      </a>
+      <a class="arch-item" href="https://docs.shelby.xyz/protocol/architecture/overview" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#E6F1FB"><i class="ti ti-layout-distribute-horizontal" style="color:#185FA5;font-size:13px" aria-hidden="true"></i></div>
+        <div><div class="arch-title">Architecture overview <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div><div class="arch-desc">Deep dive into RPCs, storage providers, smart contracts, and network topology.</div></div>
+      </a>
+      <a class="arch-item" href="https://shelby.xyz/whitepaper.pdf" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#F1EFE8"><i class="ti ti-file-text" style="color:#5F5E5A;font-size:13px" aria-hidden="true"></i></div>
+        <div><div class="arch-title">Whitepaper <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div><div class="arch-desc">Full technical specification by Aptos Labs and Jump Crypto.</div></div>
+      </a>
+    </div>
+    <div class="status-box">
+      <p class="status-box-title">Current status</p>
+      <p class="status-box-text">Shelby is live on <strong>testnet (Early Access)</strong> as of early 2026. Main testnet API: <code>api.testnet.shelby.xyz</code>. Full production expected later in 2026.</p>
+    </div>
+  </div>
+
+  <!-- ABOUT DEVELOPER -->
+  <div id="page-developer" class="page">
+    <div class="top-row">
+      <div class="top-row-left"><span class="page-title">About developer</span></div>
+    </div>
+
+    <div class="dev-hero">
+      <div class="dev-avatar">MH</div>
+      <div class="dev-hero-body">
+        <div class="dev-hero-name">Mehedi Hasan</div>
+        <div class="dev-hero-role">Web3 developer &amp; blockchain community builder</div>
+        <div class="dev-tags">
+          <span class="dev-tag dev-tag-blue"><i class="ti ti-code" aria-hidden="true"></i> Smart contracts</span>
+          <span class="dev-tag dev-tag-green"><i class="ti ti-server" aria-hidden="true"></i> DePIN / nodes</span>
+          <span class="dev-tag dev-tag-purple"><i class="ti ti-users" aria-hidden="true"></i> Community building</span>
+        </div>
+        <p class="dev-bio">I'm Mehedi — a Web3 developer passionate about decentralized infrastructure and blockchain-based communities. My journey started by exploring on-chain protocols and grew into hands-on node operation, smart contract development, and building tools that make Web3 more accessible. I've worked across multiple ecosystems — from EVM chains to emerging protocols like Shelby — and I believe the future of the internet lives on open, permissionless infrastructure. When I'm not writing code, I'm helping grow communities around the protocols I care about.</p>
+      </div>
+    </div>
+
+    <p class="section-hd">Experience &amp; journey</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div><div class="tl-year">Early days</div><div class="tl-title">Discovered blockchain &amp; DeFi</div><div class="tl-desc">Started exploring Ethereum, DeFi protocols, and on-chain mechanics. Learned Solidity and deployed first smart contracts on testnets.</div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div><div class="tl-year">Node operations</div><div class="tl-title">Running decentralized infrastructure</div><div class="tl-desc">Expanded into validator and storage node operation across multiple protocols. Deep interest in DePIN and decentralized storage networks.</div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div><div class="tl-year">Community</div><div class="tl-title">Building Web3 communities</div><div class="tl-desc">Became active in protocol communities — creating educational content, onboarding new members, and running campaigns to grow decentralized ecosystems.</div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div><div class="tl-year">Now</div><div class="tl-title">Building on Shelby protocol</div><div class="tl-desc">Contributing to the Shelby ecosystem — building community tools, dashboards, and infrastructure to help developers and node operators get the most from the protocol.</div></div>
+      </div>
+    </div>
+
+    <p class="section-hd">Skills &amp; focus areas</p>
+    <div class="skill-grid">
+      <div class="skill-item"><i class="ti ti-brand-solidity" aria-hidden="true"></i> Smart contract development</div>
+      <div class="skill-item"><i class="ti ti-server" aria-hidden="true"></i> Node &amp; validator operation</div>
+      <div class="skill-item"><i class="ti ti-database" aria-hidden="true"></i> Decentralized storage</div>
+      <div class="skill-item"><i class="ti ti-chart-line" aria-hidden="true"></i> DeFi &amp; tokenomics</div>
+      <div class="skill-item"><i class="ti ti-users" aria-hidden="true"></i> Community management</div>
+      <div class="skill-item"><i class="ti ti-code" aria-hidden="true"></i> Web3 frontend tools</div>
+      <div class="skill-item"><i class="ti ti-network" aria-hidden="true"></i> Cross-chain protocols</div>
+      <div class="skill-item"><i class="ti ti-shield-check" aria-hidden="true"></i> Protocol research</div>
+    </div>
+
+    <p class="section-hd">Connect with me</p>
+    <div class="social-grid">
+      <a class="social-card" href="https://github.com/mehedi2580" target="_blank" rel="noopener">
+        <div class="social-icon social-icon-gh"><i class="ti ti-brand-github" aria-hidden="true"></i></div>
+        <div><div class="social-name">GitHub</div><div class="social-handle">mehedi2580</div></div>
+      </a>
+      <a class="social-card" href="https://discord.gg/MD4gEG8B" target="_blank" rel="noopener">
+        <div class="social-icon social-icon-dc"><i class="ti ti-brand-discord" aria-hidden="true"></i></div>
+        <div><div class="social-name">Discord</div><div class="social-handle">Join server</div></div>
+      </a>
+      <a class="social-card" href="https://x.com/0xZeroBit" target="_blank" rel="noopener">
+        <div class="social-icon social-icon-tw"><i class="ti ti-brand-x" aria-hidden="true"></i></div>
+        <div><div class="social-name">X / Twitter</div><div class="social-handle">@0xZeroBit</div></div>
+      </a>
+      <a class="social-card" href="https://t.me/Mehedi322" target="_blank" rel="noopener">
+        <div class="social-icon social-icon-tg"><i class="ti ti-brand-telegram" aria-hidden="true"></i></div>
+        <div><div class="social-name">Telegram</div><div class="social-handle">@Mehedi322</div></div>
+      </a>
+    </div>
+
+    <div class="status-box">
+      <p class="status-box-title">Open to collaboration</p>
+      <p class="status-box-text">Interested in working together on Web3 infrastructure, node tooling, protocol dashboards, or community initiatives? Reach out on any of the platforms above.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
