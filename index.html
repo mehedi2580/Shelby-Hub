@@ -183,13 +183,19 @@
 
     <!-- TOP BAR -->
     <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-[80] bg-surface border-b border-outline gap-4">
-      <!-- Primary navigation -->
-      <nav class="flex items-center gap-1 overflow-x-auto whitespace-nowrap" aria-label="Top navigation">
-        <button onclick="showPage('tracker',this)" class="nav-btn px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200 text-sm">Testnet Tracker</button>
-        <button onclick="showPage('calculator',this)" class="nav-btn px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200 text-sm">Node ROI Calculator</button>
-        <button onclick="showPage('learn',this)" class="nav-btn px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200 text-sm">Learn About Shelby</button>
-        <button onclick="showPage('developer',this)" class="nav-btn px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200 text-sm">About Developer</button>
-      </nav>
+      <!-- Menu button with quick links -->
+      <details class="relative">
+        <summary class="list-none flex items-center gap-2 px-3 py-2 text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container cursor-pointer" aria-label="Open menu" id="menu-toggle" data-testid="menu-toggle">
+          <span class="material-symbols-outlined">menu</span>
+          <span class="font-label-caps text-label-caps uppercase tracking-wider">Menu</span>
+        </summary>
+        <div class="absolute left-0 mt-2 w-64 bg-surface border border-outline rounded-lg shadow-lg p-2 z-[90]">
+          <button onclick="showPage('tracker',this); this.closest('details').open = false;" class="w-full text-left px-3 py-2 rounded-md text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors">Testnet Tracker</button>
+          <button onclick="showPage('calculator',this); this.closest('details').open = false;" class="w-full text-left px-3 py-2 rounded-md text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors">Node ROI Calculator</button>
+          <button onclick="showPage('learn',this); this.closest('details').open = false;" class="w-full text-left px-3 py-2 rounded-md text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors">Learn About Shelby</button>
+          <button onclick="showPage('developer',this); this.closest('details').open = false;" class="w-full text-left px-3 py-2 rounded-md text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors">About Developer</button>
+        </div>
+      </details>
       <!-- Search -->
       <div class="relative flex-1 max-w-md">
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
