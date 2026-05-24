@@ -182,11 +182,14 @@
   <main class="flex-1 flex flex-col min-h-screen">
 
     <!-- TOP BAR -->
-    <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-[80] bg-surface border-b border-outline">
-      <!-- Hamburger menu button — always visible -->
-      <button class="mr-3 p-2 text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container menu-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="false" id="menu-toggle" data-testid="menu-toggle">
-        <span class="material-symbols-outlined">menu</span>
-      </button>
+    <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-[80] bg-surface border-b border-outline gap-4">
+      <!-- Primary navigation -->
+      <nav class="flex items-center gap-1 overflow-x-auto whitespace-nowrap" aria-label="Top navigation">
+        <button onclick="showPage('tracker',this)" class="nav-btn px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200 text-sm">Testnet Tracker</button>
+        <button onclick="showPage('calculator',this)" class="nav-btn px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200 text-sm">Node ROI Calculator</button>
+        <button onclick="showPage('learn',this)" class="nav-btn px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200 text-sm">Learn About Shelby</button>
+        <button onclick="showPage('developer',this)" class="nav-btn px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200 text-sm">About Developer</button>
+      </nav>
       <!-- Search -->
       <div class="relative flex-1 max-w-md">
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
