@@ -182,18 +182,15 @@
   <main class="flex-1 flex flex-col min-h-screen">
 
     <!-- TOP BAR -->
-    <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-[80] bg-surface border-b border-outline">
-      <!-- Hamburger menu button — always visible -->
-      <button class="mr-3 p-2 text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container menu-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="false" id="menu-toggle" data-testid="menu-toggle">
-        <span class="material-symbols-outlined">menu</span>
-      </button>
-      <!-- Search -->
-      <div class="relative flex-1 max-w-md">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
-        <input class="w-full bg-surface-bright border border-outline rounded-lg py-2 pl-10 pr-4 text-body-base focus:outline-none focus:border-secondary transition-colors placeholder:text-on-surface-variant/50 text-on-surface" placeholder="Search docs, tools, or nodes…" type="text"/>
-      </div>
+    <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-[80] bg-surface border-b border-outline gap-4">
+      <nav class="flex items-center gap-1 overflow-x-auto no-scrollbar" aria-label="Header navigation">
+        <button onclick="showPage('tracker', this)" class="nav-btn nav-item-active whitespace-nowrap px-3 py-2 rounded-lg text-label-caps font-label-caps uppercase tracking-wider text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors">Testnet Tracker</button>
+        <button onclick="showPage('calculator', this)" class="nav-btn whitespace-nowrap px-3 py-2 rounded-lg text-label-caps font-label-caps uppercase tracking-wider text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors">Node ROI Calculator</button>
+        <button onclick="showPage('learn', this)" class="nav-btn whitespace-nowrap px-3 py-2 rounded-lg text-label-caps font-label-caps uppercase tracking-wider text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors">Learn About Shelby</button>
+        <button onclick="showPage('developer', this)" class="nav-btn whitespace-nowrap px-3 py-2 rounded-lg text-label-caps font-label-caps uppercase tracking-wider text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors">About Developer</button>
+      </nav>
       <!-- Right -->
-      <div class="flex items-center gap-3 ml-4">
+      <div class="flex items-center gap-3 ml-auto">
         <a href="https://docs.shelby.xyz/protocol" target="_blank" class="hidden md:block font-label-caps text-label-caps text-on-surface-variant hover:text-secondary transition-colors uppercase tracking-wider">Docs</a>
         <a href="https://x.com/shelbyserves" target="_blank" class="hidden md:block font-label-caps text-label-caps text-on-surface-variant hover:text-secondary transition-colors uppercase tracking-wider">Twitter</a>
         <a href="https://discord.gg/shelbyserves" target="_blank" class="hidden md:block font-label-caps text-label-caps text-on-surface-variant hover:text-secondary transition-colors uppercase tracking-wider">Discord</a>
