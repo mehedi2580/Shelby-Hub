@@ -1,19 +1,31 @@
 /* ===== SHELBY HUB — app.js ===== */
 
-let drawerOpen = false;
 let rwChart, storageChart, nodeChart, roiChart;
 const API = "/api";
 
 // ── Sidebar helpers ──────────────────────────────────────────
 function openSidebar() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebar-overlay').classList.add('visible');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const menuBtn = document.getElementById('menu-toggle');
+
+  sidebar.classList.add('open');
+  overlay.classList.add('visible');
+  menuBtn?.setAttribute('aria-expanded', 'true');
   document.body.style.overflow = 'hidden'; // prevent background scroll
+
+  const firstNavItem = sidebar.querySelector('.nav-btn');
+  firstNavItem?.focus();
 }
 
 function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.remove('visible');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const menuBtn = document.getElementById('menu-toggle');
+
+  sidebar.classList.remove('open');
+  overlay.classList.remove('visible');
+  menuBtn?.setAttribute('aria-expanded', 'false');
   document.body.style.overflow = '';
 }
 

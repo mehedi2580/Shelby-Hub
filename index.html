@@ -105,18 +105,25 @@
 
     /* ── Sidebar: always a slide-in drawer, hidden by default ── */
     #sidebar {
-      transform: translateX(-100%);
-      transition: transform 0.25s ease;
+      transform: translateX(-110%);
+      opacity: 0;
+      visibility: hidden;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, visibility 0.2s ease;
     }
     #sidebar.open {
       transform: translateX(0);
+      opacity: 1;
+      visibility: visible;
     }
     /* Overlay: hidden by default, shown when sidebar is open */
     #sidebar-overlay {
-      display: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
     }
     #sidebar-overlay.visible {
-      display: block;
+      opacity: 1;
+      visibility: visible;
     }
   </style>
 </head>
@@ -126,7 +133,7 @@
   <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-[60]" onclick="closeSidebar()" aria-hidden="true"></div>
 
   <!-- ── SIDE NAV ─────────────────────────────────── -->
-  <aside id="sidebar" class="h-screen w-64 fixed left-0 top-0 border-r border-outline bg-background flex flex-col py-6 z-[70]">
+  <aside id="sidebar" class="h-screen w-72 max-w-[90vw] fixed left-0 top-0 border-r border-outline bg-background flex flex-col py-6 z-[70] overflow-hidden" role="dialog" aria-modal="true" aria-label="Main navigation">
     <!-- Brand -->
     <div class="px-6 mb-8 flex items-center gap-3">
       <img src="https://avatars.githubusercontent.com/u/219037914?s=96&v=4" width="36" height="36" alt="Shelby logo" class="rounded-lg flex-shrink-0"/>
@@ -137,7 +144,7 @@
     </div>
 
     <!-- Nav items -->
-    <nav class="flex-1 px-4 space-y-1">
+    <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar" aria-label="Primary">
       <button onclick="showPage('tracker',this)" class="nav-btn w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200">
         <span class="material-symbols-outlined mr-3 text-[20px]">monitoring</span>
         <span class="font-body-base text-body-base">Testnet Tracker</span>
@@ -177,7 +184,7 @@
     <!-- TOP BAR -->
     <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-[80] bg-surface border-b border-outline">
       <!-- Hamburger menu button — always visible -->
-      <button class="mr-3 p-2 text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container" onclick="toggleSidebar()" aria-label="Toggle menu">
+      <button class="mr-3 p-2 text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container" onclick="toggleSidebar()" aria-label="Toggle menu" aria-controls="sidebar" aria-expanded="false" id="menu-toggle">
         <span class="material-symbols-outlined">menu</span>
       </button>
       <!-- Search -->
