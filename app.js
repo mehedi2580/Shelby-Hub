@@ -7,12 +7,14 @@ const API = "/api";
 // ── Sidebar helpers ──────────────────────────────────────────
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebar-overlay').classList.remove('hidden');
+  document.getElementById('sidebar-overlay').classList.add('visible');
+  document.body.style.overflow = 'hidden'; // prevent background scroll
 }
 
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.add('hidden');
+  document.getElementById('sidebar-overlay').classList.remove('visible');
+  document.body.style.overflow = '';
 }
 
 function toggleSidebar() {

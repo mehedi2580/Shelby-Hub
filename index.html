@@ -102,23 +102,31 @@
     input[type=range] { accent-color: #bdf4ff; }
     .live-pulse { animation: pulse-green 1.5s infinite; }
     @keyframes pulse-green { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    /* Mobile sidebar */
-    @media(max-width:768px){
-      aside { transform: translateX(-100%); transition: transform 0.25s ease; }
-      aside.open { transform: translateX(0); }
-      main { margin-left: 0 !important; }
-      .mob-menu-btn { display: flex !important; }
+
+    /* ── Sidebar: always a slide-in drawer, hidden by default ── */
+    #sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
     }
-    .mob-menu-btn { display: none; }
+    #sidebar.open {
+      transform: translateX(0);
+    }
+    /* Overlay: hidden by default, shown when sidebar is open */
+    #sidebar-overlay {
+      display: none;
+    }
+    #sidebar-overlay.visible {
+      display: block;
+    }
   </style>
 </head>
 <body class="bg-background text-on-background min-h-screen flex">
 
-  <!-- Mobile sidebar overlay -->
-  <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 z-40" onclick="closeSidebar()" aria-hidden="true"></div>
+  <!-- Sidebar overlay: click anywhere outside to close -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-[60]" onclick="closeSidebar()" aria-hidden="true"></div>
 
   <!-- ── SIDE NAV ─────────────────────────────────── -->
-  <aside id="sidebar" class="h-screen w-64 fixed left-0 top-0 border-r border-outline bg-background flex flex-col py-6 z-50 transition-transform duration-200">
+  <aside id="sidebar" class="h-screen w-64 fixed left-0 top-0 border-r border-outline bg-background flex flex-col py-6 z-[70]">
     <!-- Brand -->
     <div class="px-6 mb-8 flex items-center gap-3">
       <img src="https://avatars.githubusercontent.com/u/219037914?s=96&v=4" width="36" height="36" alt="Shelby logo" class="rounded-lg flex-shrink-0"/>
@@ -164,12 +172,12 @@
   </aside>
 
   <!-- ── MAIN ──────────────────────────────────────── -->
-  <main class="flex-1 ml-64 flex flex-col min-h-screen">
+  <main class="flex-1 flex flex-col min-h-screen">
 
     <!-- TOP BAR -->
     <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-40 bg-surface border-b border-outline">
-      <!-- Mobile menu btn -->
-      <button class="mob-menu-btn mr-3 p-2 text-on-surface-variant hover:text-primary" onclick="toggleSidebar()" aria-label="Toggle menu">
+      <!-- Hamburger menu button — always visible -->
+      <button class="mr-3 p-2 text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container" onclick="toggleSidebar()" aria-label="Toggle menu">
         <span class="material-symbols-outlined">menu</span>
       </button>
       <!-- Search -->
