@@ -4,19 +4,42 @@ let drawerOpen = false;
 let rwChart, storageChart, nodeChart, roiChart;
 const API = "/api";
 
+// ── Sidebar helpers ──────────────────────────────────────────
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.remove('hidden');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.add('hidden');
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar.classList.contains('open')) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+}
+
 // ── Navigation ───────────────────────────────────────────────
 function showPage(id, btn) {
+  // Switch pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+
+  // Update active nav button
   document.querySelectorAll('.nav-btn').forEach(b => {
     b.classList.remove('nav-item-active');
-    b.classList.add('text-on-surface-variant');
   });
-  document.getElementById('page-' + id).classList.add('active');
   btn.classList.add('nav-item-active');
-  btn.classList.remove('text-on-surface-variant');
+
+  // Always close sidebar when a nav item is clicked
+  closeSidebar();
+
   if (id === 'calculator') setTimeout(calcROI, 80);
-  // Close mobile sidebar
-  document.getElementById('sidebar').classList.remove('open');
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -330,6 +353,15 @@ function calcROI() {
 
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Set initial active nav button (Testnet Tracker)
+  const firstNavBtn = document.querySelector('.nav-btn');
+  if (firstNavBtn) firstNavBtn.classList.add('nav-item-active');
+
+  // Close sidebar on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSidebar();
+  });
+
   refreshTracker();
   setInterval(() => {
     if (document.getElementById('page-tracker').classList.contains('active')) {

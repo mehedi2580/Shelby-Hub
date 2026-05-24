@@ -114,6 +114,9 @@
 </head>
 <body class="bg-background text-on-background min-h-screen flex">
 
+  <!-- Mobile sidebar overlay -->
+  <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 z-40" onclick="closeSidebar()" aria-hidden="true"></div>
+
   <!-- ── SIDE NAV ─────────────────────────────────── -->
   <aside id="sidebar" class="h-screen w-64 fixed left-0 top-0 border-r border-outline bg-background flex flex-col py-6 z-50 transition-transform duration-200">
     <!-- Brand -->
@@ -127,7 +130,7 @@
 
     <!-- Nav items -->
     <nav class="flex-1 px-4 space-y-1">
-      <button onclick="showPage('tracker',this)" class="nav-btn nav-item-active w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200">
+      <button onclick="showPage('tracker',this)" class="nav-btn w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200">
         <span class="material-symbols-outlined mr-3 text-[20px]">monitoring</span>
         <span class="font-body-base text-body-base">Testnet Tracker</span>
       </button>
@@ -166,7 +169,7 @@
     <!-- TOP BAR -->
     <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-40 bg-surface border-b border-outline">
       <!-- Mobile menu btn -->
-      <button class="mob-menu-btn mr-3 p-2 text-on-surface-variant hover:text-primary" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Toggle menu">
+      <button class="mob-menu-btn mr-3 p-2 text-on-surface-variant hover:text-primary" onclick="toggleSidebar()" aria-label="Toggle menu">
         <span class="material-symbols-outlined">menu</span>
       </button>
       <!-- Search -->
