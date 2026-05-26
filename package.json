@@ -1,7 +1,7 @@
 {
   "name": "shelby-hub",
-  "version": "1.0.0",
-  "description": "Shelby Protocol community dashboard — testnet tracker, ROI calculator, docs, and developer profile",
+  "version": "1.1.0",
+  "description": "Shelby Protocol community dashboard — testnet tracker, ROI calculator, wallet connect, docs, and developer profile",
   "type": "module",
   "main": "server.js",
   "scripts": {

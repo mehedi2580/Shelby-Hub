@@ -23,9 +23,14 @@
         <div class="nav-subtitle">Protocol dashboard</div>
       </div>
     </div>
-    <button class="hamburger" onclick="toggleDrawer()" aria-label="Toggle navigation menu">
-      <span></span><span></span><span></span>
-    </button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="wallet-nav-btn" id="walletNavBtn" onclick="showPage('wallet', this); loadWalletPage()" style="display:none">
+        <span class="wallet-nav-addr" id="walletNavAddr"></span>
+      </button>
+      <button class="hamburger" onclick="toggleDrawer()" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </nav>
 
   <div class="drawer" id="drawer">
@@ -40,6 +45,9 @@
         </button>
         <button class="nav-item" onclick="showPage('learn', this)">
           <i class="ti ti-book" aria-hidden="true"></i> Learn about Shelby
+        </button>
+        <button class="nav-item" id="walletNavItem" onclick="showPage('wallet', this); loadWalletPage()">
+          <i class="ti ti-wallet" aria-hidden="true"></i> My wallet
         </button>
         <div class="nav-divider"></div>
         <button class="nav-item" onclick="showPage('developer', this)">
@@ -247,6 +255,155 @@
     <div class="status-box">
       <p class="status-box-title">Current status</p>
       <p class="status-box-text">Shelby is live on <strong>Shelbynet (Early Access)</strong> as of early 2026. Main API: <code>api.testnet.shelby.xyz</code>. Browse live activity at <a href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="color:var(--accent)">explorer.shelby.xyz/shelbynet</a>. Full production expected later in 2026.</p>
+    </div>
+  </div>
+
+  <!-- WALLET -->
+  <div id="page-wallet" class="page">
+    <div class="top-row">
+      <div class="top-row-left">
+        <span class="page-title">My wallet</span>
+        <span class="badge badge-blue" id="wallet-status-badge">Not connected</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="refresh-btn" id="walletRefreshBtn" onclick="loadWalletData()" style="display:none">
+          <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
+        </button>
+        <button class="refresh-btn" id="walletDisconnectBtn" onclick="disconnectWallet()" style="display:none">
+          <i class="ti ti-plug-x" aria-hidden="true"></i> Disconnect
+        </button>
+      </div>
+    </div>
+
+    <!-- Connect panel — shown when no wallet -->
+    <div id="wallet-connect-panel">
+      <div class="wallet-connect-hero">
+        <div class="wallet-connect-icon"><i class="ti ti-wallet" aria-hidden="true"></i></div>
+        <div class="wallet-connect-title">Connect your Aptos wallet</div>
+        <div class="wallet-connect-sub">View your Shelby blob history, storage usage, and on-chain activity filtered to your address.</div>
+      </div>
+
+      <div class="two-col" style="margin-bottom:1.25rem">
+        <div class="card wallet-option-card" id="petraCard">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div class="wallet-icon-circle" style="background:#EAF3DE">
+              <i class="ti ti-brand-chrome" style="color:#3B6D11" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Petra wallet</div>
+              <div style="font-size:11px;color:var(--text-secondary)">Official Aptos wallet</div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Connect with the Petra browser extension. One-click sign-in with your Aptos account.</p>
+          <button class="wallet-connect-btn wallet-connect-btn-green" onclick="connectPetra()">
+            <i class="ti ti-plug" aria-hidden="true"></i> Connect Petra
+          </button>
+        </div>
+        <div class="card wallet-option-card" id="martianCard">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div class="wallet-icon-circle" style="background:#EEEDFE">
+              <i class="ti ti-alien" style="color:#3C3489" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Martian wallet</div>
+              <div style="font-size:11px;color:var(--text-secondary)">Popular Aptos wallet</div>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Connect with Martian browser extension. Fast and secure Aptos wallet with full dApp support.</p>
+          <button class="wallet-connect-btn wallet-connect-btn-purple" onclick="connectMartian()">
+            <i class="ti ti-plug" aria-hidden="true"></i> Connect Martian
+          </button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.25rem">
+        <p class="section-hd" style="margin-bottom:10px">Or paste an Aptos address</p>
+        <div class="wallet-paste-row">
+          <input
+            type="text"
+            id="walletAddressInput"
+            class="wallet-input"
+            placeholder="0x… Aptos address (64 hex chars)"
+            oninput="validateWalletInput()"
+            onkeydown="if(event.key==='Enter') submitPastedAddress()"
+          />
+          <button class="wallet-connect-btn wallet-connect-btn-blue" id="walletSubmitBtn" onclick="submitPastedAddress()" disabled>
+            <i class="ti ti-search" aria-hidden="true"></i> Look up
+          </button>
+        </div>
+        <p class="footnote" style="margin-top:8px"><i class="ti ti-eye" aria-hidden="true"></i> Read-only — no signing or transactions required</p>
+      </div>
+    </div>
+
+    <!-- Dashboard — shown after connecting -->
+    <div id="wallet-dashboard" style="display:none">
+
+      <!-- Address bar -->
+      <div class="wallet-addr-bar card" style="margin-bottom:1.25rem">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="wallet-avatar" id="walletAvatar"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px">Connected address</div>
+            <div style="font-size:13px;font-weight:500;color:var(--text-primary);word-break:break-all" id="walletFullAddr">—</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="refresh-btn" onclick="copyWalletAddr()" title="Copy address">
+              <i class="ti ti-copy" aria-hidden="true"></i>
+            </button>
+            <a class="refresh-btn" id="walletExplorerLink" href="#" target="_blank" rel="noopener" style="text-decoration:none" title="View on explorer">
+              <i class="ti ti-external-link" aria-hidden="true"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="wallet-loading" style="text-align:center;padding:40px 0;color:var(--text-secondary);font-size:13px">
+        <i class="ti ti-loader" style="font-size:24px;display:block;margin-bottom:8px" aria-hidden="true"></i>
+        Loading wallet data…
+      </div>
+
+      <!-- Stats -->
+      <div id="wallet-stats" style="display:none">
+        <p class="section-hd">Wallet overview</p>
+        <div class="metric-grid" style="margin-bottom:1.25rem" id="walletMetrics"></div>
+
+        <div class="two-col">
+          <div class="card">
+            <p class="section-hd" style="margin-bottom:10px">Blob activity (14d)</p>
+            <div class="chart-wrap"><canvas id="walletChart" role="img" aria-label="Bar chart of wallet blob activity over 14 days">Wallet activity.</canvas></div>
+          </div>
+          <div class="card">
+            <p class="section-hd" style="margin-bottom:10px">Transaction breakdown</p>
+            <div style="position:relative;width:100%;height:180px">
+              <canvas id="walletTxChart" role="img" aria-label="Donut chart of transaction types">Tx types.</canvas>
+            </div>
+            <div class="node-legend" id="walletTxLegend"></div>
+          </div>
+        </div>
+
+        <p class="section-hd">Recent transactions</p>
+        <div class="card" style="margin-bottom:1.25rem" id="walletTxFeed"></div>
+
+        <p class="footnote" id="wallet-data-note">
+          <i class="ti ti-info-circle" aria-hidden="true"></i>
+          <span id="wallet-note-text">Data sourced from Aptos testnet indexer.</span>
+        </p>
+      </div>
+
+      <!-- Empty state -->
+      <div id="wallet-empty" style="display:none;text-align:center;padding:48px 0">
+        <i class="ti ti-database-off" style="font-size:32px;color:var(--text-tertiary);display:block;margin-bottom:12px" aria-hidden="true"></i>
+        <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:4px">No Shelby activity found</div>
+        <div style="font-size:12px;color:var(--text-secondary)">This address has no Shelby transactions on Aptos testnet yet.</div>
+      </div>
+
+      <!-- Error state -->
+      <div id="wallet-error" style="display:none;text-align:center;padding:48px 0">
+        <i class="ti ti-alert-circle" style="font-size:32px;color:var(--red);display:block;margin-bottom:12px" aria-hidden="true"></i>
+        <div style="font-size:14px;font-weight:500;color:var(--text-primary);margin-bottom:4px">Could not load wallet data</div>
+        <div style="font-size:12px;color:var(--text-secondary)" id="wallet-error-msg">Server may be offline — showing simulated data below.</div>
+      </div>
     </div>
   </div>
 
