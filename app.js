@@ -236,16 +236,24 @@ function renderCharts(historyData) {
 }
 
 // ── Render nodes ──────────────────────────────────────────────
+let _currentNodes = [];
+
 function renderNodes(liveNodes) {
   const nodes = liveNodes && liveNodes.length > 0 ? liveNodes : SHELBYNET_NODES;
-  document.getElementById('nodeGrid').innerHTML = nodes.map(n => {
+  _currentNodes = nodes;
+  document.getElementById('nodeGrid').innerHTML = nodes.map((n, i) => {
     const cls = n.status === 'online' ? 'on' : n.status === 'syncing' ? 'syn' : 'off';
     const addrLabel = n.address && n.address.startsWith('0x') ? shortAddr(n.address) : n.name || n.address;
-    return `<div class="node-card">
+    return `<div class="node-card node-card-clickable" onclick="openNodeModal(${i})" tabindex="0"
+                 onkeydown="if(event.key==='Enter'||event.key===' ')openNodeModal(${i})"
+                 role="button" aria-label="View details for ${addrLabel}">
       <div class="node-name"><span class="dot dot-${cls}" aria-hidden="true"></span>${addrLabel}</div>
       <div class="node-meta">${n.region} · ${n.lat || '—'}ms avg</div>
       <div class="node-meta">${n.stake ? n.stake.toLocaleString() + ' staked' : rnd(800, 2400).toLocaleString() + ' chunks'}</div>
-      <span class="pill pill-${cls}">${n.status}</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">
+        <span class="pill pill-${cls}">${n.status}</span>
+        <span style="font-size:11px;color:var(--text-tertiary)"><i class="ti ti-chevron-right" style="font-size:13px" aria-hidden="true"></i></span>
+      </div>
     </div>`;
   }).join('');
 }
@@ -752,3 +760,269 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 10000);
 });
+
+// ════════════════════════════════════════════════════════════════
+// NODE DETAIL MODAL
+// ════════════════════════════════════════════════════════════════
+
+let nodeLatencyChart, nodeUptimeChart, nodeChunksChart;
+
+// ── Open modal for node at index i ───────────────────────────
+async function openNodeModal(i) {
+  const node = _currentNodes[i];
+  if (!node) return;
+
+  const cls  = node.status === 'online' ? 'on' : node.status === 'syncing' ? 'syn' : 'off';
+  const name = node.address && node.address.startsWith('0x')
+    ? shortAddr(node.address)
+    : node.name || node.address || `Node ${i + 1}`;
+  const fullId = node.address || node.name || name;
+
+  // Header
+  document.getElementById('nodeModalTitle').textContent = name;
+  document.getElementById('nodeModalSub').textContent   = `${node.region || 'Unknown region'} · ${node.status}`;
+  const dot = document.getElementById('nodeModalDot');
+  dot.className = `dot dot-${cls}`;
+  dot.style.cssText = 'width:9px;height:9px;flex-shrink:0';
+
+  // Show modal, show loading
+  document.getElementById('node-modal-backdrop').style.display = 'flex';
+  document.getElementById('nodeModalLoading').style.display    = '';
+  document.getElementById('nodeModalContent').style.display    = 'none';
+  document.body.style.overflow = 'hidden';
+
+  // Fetch live data or fall back to simulated
+  let data = null;
+  let live = false;
+  const health = await tryFetch(`${API}/health`);
+  if (health?.ok) {
+    const result = await tryFetch(`${API}/nodes/${encodeURIComponent(fullId)}`);
+    if (result?.ok) { data = result.data; live = true; }
+  }
+  if (!data) data = generateSimulatedNodeData(node);
+
+  // Render
+  document.getElementById('nodeModalLoading').style.display = 'none';
+  document.getElementById('nodeModalContent').style.display = '';
+  renderNodeModal(data, node, live);
+}
+
+// ── Close modal ───────────────────────────────────────────────
+function closeNodeModal(event) {
+  if (event && event.target !== document.getElementById('node-modal-backdrop')) return;
+  document.getElementById('node-modal-backdrop').style.display = 'none';
+  document.body.style.overflow = '';
+  if (nodeLatencyChart) { nodeLatencyChart.destroy(); nodeLatencyChart = null; }
+  if (nodeUptimeChart)  { nodeUptimeChart.destroy();  nodeUptimeChart  = null; }
+  if (nodeChunksChart)  { nodeChunksChart.destroy();  nodeChunksChart  = null; }
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeNodeModal({ target: document.getElementById('node-modal-backdrop') });
+});
+
+// ── Simulated node detail data ────────────────────────────────
+function generateSimulatedNodeData(node) {
+  const baseLatency = node.lat || rnd(20, 80);
+  const isOffline   = node.status === 'offline';
+  const isSyncing   = node.status === 'syncing';
+
+  // 24h latency (hourly)
+  const latencyHistory = Array.from({ length: 24 }, (_, i) => {
+    if (isOffline && i < 6) return null;
+    return Math.max(5, baseLatency + rnd(-15, 20) + (isSyncing ? rnd(0, 30) : 0));
+  });
+
+  // 30d uptime (daily %)
+  const uptimeHistory = Array.from({ length: 30 }, (_, i) => {
+    if (isOffline && i > 26) return rnd(0, 40);
+    if (isSyncing) return rnd(75, 95);
+    return rnd(96, 100);
+  });
+
+  // 14d chunk count
+  let baseChunks = rnd(800, 2400);
+  const chunkHistory = Array.from({ length: 14 }, () => {
+    baseChunks += rnd(-20, 60);
+    return Math.max(0, baseChunks);
+  });
+
+  // Audit results (last 10)
+  const auditResults = Array.from({ length: 10 }, (_, i) => {
+    const passed = isOffline ? (i > 3) : (Math.random() > (isSyncing ? 0.15 : 0.03));
+    const ago    = (i + 1) * rnd(18, 35) * 60;
+    return {
+      passed,
+      challengeId: '0x' + Array.from({ length: 8 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      timestamp:   new Date(Date.now() - ago * 1000).toISOString(),
+      responseMs:  passed ? rnd(40, 220) : null,
+      chunkId:     rnd(100, 9999),
+    };
+  });
+
+  const passCount   = auditResults.filter(a => a.passed).length;
+  const uptimeAvg   = Math.round(uptimeHistory.reduce((s, v) => s + v, 0) / uptimeHistory.length);
+  const latencyAvg  = Math.round(latencyHistory.filter(Boolean).reduce((s, v) => s + v, 0) / latencyHistory.filter(Boolean).length);
+  const totalChunks = chunkHistory[chunkHistory.length - 1];
+
+  return {
+    uptime30d:      uptimeAvg,
+    latencyAvgMs:   latencyAvg,
+    latencyP99Ms:   latencyAvg + rnd(30, 90),
+    totalChunks,
+    auditPassRate:  Math.round((passCount / auditResults.length) * 100),
+    stakedApt:      node.stake || rnd(500, 5000),
+    joinedDaysAgo:  rnd(10, 180),
+    softwareVersion:'v0.8.' + rnd(1, 9),
+    latencyHistory,
+    uptimeHistory,
+    chunkHistory,
+    auditResults,
+  };
+}
+
+// ── Render modal content ──────────────────────────────────────
+function renderNodeModal(data, node, live) {
+  const { text: tc, grid: gc } = chartColors();
+
+  // ── Stat pills ──────────────────────────────────────────────
+  const statusCls = node.status === 'online' ? 'on' : node.status === 'syncing' ? 'syn' : 'off';
+  const stats = [
+    { label: 'Uptime (30d)',    val: data.uptime30d + '%',            color: data.uptime30d >= 95 ? 'var(--green)' : data.uptime30d >= 80 ? 'var(--yellow)' : 'var(--red)' },
+    { label: 'Avg latency',     val: data.latencyAvgMs + ' ms',       color: data.latencyAvgMs < 60 ? 'var(--green)' : data.latencyAvgMs < 120 ? 'var(--yellow)' : 'var(--red)' },
+    { label: 'P99 latency',     val: data.latencyP99Ms + ' ms',       color: 'var(--text-primary)' },
+    { label: 'Chunks stored',   val: data.totalChunks.toLocaleString(), color: 'var(--text-primary)' },
+    { label: 'Audit pass rate', val: data.auditPassRate + '%',         color: data.auditPassRate >= 95 ? 'var(--green)' : data.auditPassRate >= 80 ? 'var(--yellow)' : 'var(--red)' },
+    { label: 'Staked',         val: data.stakedApt.toLocaleString() + ' APT', color: 'var(--text-primary)' },
+    { label: 'Joined',         val: data.joinedDaysAgo + 'd ago',     color: 'var(--text-secondary)' },
+    { label: 'Version',        val: data.softwareVersion,             color: 'var(--text-secondary)' },
+  ];
+
+  document.getElementById('nodeDetailStats').innerHTML = stats.map(s => `
+    <div class="node-stat-pill">
+      <div class="node-stat-label">${s.label}</div>
+      <div class="node-stat-val" style="color:${s.color}">${s.val}</div>
+    </div>`).join('');
+
+  // ── Latency chart ────────────────────────────────────────────
+  const hourLabels = Array.from({ length: 24 }, (_, i) => {
+    const h = new Date(Date.now() - (23 - i) * 3600000);
+    return h.getHours().toString().padStart(2, '0') + ':00';
+  });
+
+  if (nodeLatencyChart) nodeLatencyChart.destroy();
+  nodeLatencyChart = new Chart(document.getElementById('nodeLatencyChart'), {
+    type: 'line',
+    data: {
+      labels: hourLabels,
+      datasets: [{
+        label: 'Latency (ms)',
+        data: data.latencyHistory,
+        borderColor: '#378ADD',
+        backgroundColor: 'rgba(55,138,221,0.08)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.35,
+        fill: true,
+        spanGaps: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: tc, font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: gc } },
+        y: { ticks: { color: tc, font: { size: 9 }, callback: v => v + ' ms' }, grid: { color: gc }, beginAtZero: true },
+      }
+    }
+  });
+
+  // ── Uptime chart (30d) ───────────────────────────────────────
+  const dayLabels30 = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(Date.now() - (29 - i) * 86400000);
+    return (d.getMonth() + 1) + '/' + d.getDate();
+  });
+
+  if (nodeUptimeChart) nodeUptimeChart.destroy();
+  nodeUptimeChart = new Chart(document.getElementById('nodeUptimeChart'), {
+    type: 'bar',
+    data: {
+      labels: dayLabels30,
+      datasets: [{
+        label: 'Uptime %',
+        data: data.uptimeHistory,
+        backgroundColor: data.uptimeHistory.map(v =>
+          v >= 95 ? 'rgba(29,158,117,0.7)' : v >= 80 ? 'rgba(186,117,23,0.7)' : 'rgba(163,45,45,0.7)'
+        ),
+        borderRadius: 2,
+        barPercentage: 0.85,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: tc, font: { size: 8 }, maxTicksLimit: 6 }, grid: { display: false } },
+        y: { min: 0, max: 100, ticks: { color: tc, font: { size: 9 }, callback: v => v + '%' }, grid: { color: gc } },
+      }
+    }
+  });
+
+  // ── Chunks chart (14d) ───────────────────────────────────────
+  const dayLabels14 = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(Date.now() - (13 - i) * 86400000);
+    return (d.getMonth() + 1) + '/' + d.getDate();
+  });
+
+  if (nodeChunksChart) nodeChunksChart.destroy();
+  nodeChunksChart = new Chart(document.getElementById('nodeChunksChart'), {
+    type: 'line',
+    data: {
+      labels: dayLabels14,
+      datasets: [{
+        label: 'Chunks',
+        data: data.chunkHistory,
+        borderColor: '#7F77DD',
+        backgroundColor: 'rgba(127,119,221,0.1)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: tc, font: { size: 8 }, maxTicksLimit: 5 }, grid: { color: gc } },
+        y: { ticks: { color: tc, font: { size: 9 } }, grid: { color: gc }, beginAtZero: false },
+      }
+    }
+  });
+
+  // ── Audit feed ───────────────────────────────────────────────
+  document.getElementById('nodeAuditFeed').innerHTML = data.auditResults.map(a => {
+    const ago = Math.round((Date.now() - new Date(a.timestamp).getTime()) / 1000);
+    return `<div class="feed-row">
+      <i class="ti ${a.passed ? 'ti-shield-check' : 'ti-shield-x'} feed-icon"
+         style="color:${a.passed ? 'var(--green)' : 'var(--red)'}" aria-hidden="true"></i>
+      <span class="feed-text">
+        Chunk #${a.chunkId}
+        <span class="feed-node">${a.challengeId.slice(0, 10)}…</span>
+        ${a.passed ? `<span style="color:var(--text-tertiary)">· ${a.responseMs}ms</span>` : '<span style="color:var(--red)">· no response</span>'}
+      </span>
+      <span class="feed-time" style="display:flex;align-items:center;gap:4px">
+        ${a.passed
+          ? '<span style="background:var(--green-light);color:var(--green-text);padding:1px 6px;border-radius:99px;font-size:10px;font-weight:500">pass</span>'
+          : '<span style="background:var(--red-light);color:var(--red);padding:1px 6px;border-radius:99px;font-size:10px;font-weight:500">fail</span>'}
+        ${secsAgo(Math.max(ago, 1))}
+      </span>
+    </div>`;
+  }).join('');
+
+  // ── Note ─────────────────────────────────────────────────────
+  document.getElementById('nodeModalNoteText').textContent = live
+    ? `✅ Live on-chain data — last updated ${new Date().toLocaleTimeString()}`
+    : '⚠️ Simulated data — run npm start to connect live node data';
+}

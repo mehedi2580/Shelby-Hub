@@ -378,6 +378,95 @@ app.get("/api/wallet/:address", async (req, res) => {
   }
 });
 
+// ── /api/nodes/:id ───────────────────────────────────────────
+// Returns detailed health data for a single storage provider node.
+// :id can be a 0x address or a node name like SP-Node-01.
+app.get("/api/nodes/:id", async (req, res) => {
+  const nodeId = req.params.id;
+
+  try {
+    // 1. Try to find the node on-chain by address or name
+    let onChainNode = null;
+    try {
+      const resources = await aptosClient.getAccountResources({
+        accountAddress: SHELBY_CONTRACT,
+      });
+      const nodeResources = resources.filter(r =>
+        r.type.toLowerCase().includes("storage") ||
+        r.type.toLowerCase().includes("provider")
+      );
+      for (const r of nodeResources) {
+        const list = r.data?.providers ?? r.data?.storage_providers ?? r.data?.vec ?? [];
+        if (Array.isArray(list)) {
+          const found = list.find(p =>
+            (p?.addr ?? p?.address ?? "").toLowerCase() === nodeId.toLowerCase()
+          );
+          if (found) { onChainNode = found; break; }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Fetch recent audit transactions for this node from indexer
+    let auditTxns = [];
+    if (/^0x[0-9a-fA-F]+$/.test(nodeId)) {
+      try {
+        const auditData = await gql(TESTNET_INDEXER, `
+          query NodeAudits($sender: String!) {
+            user_transactions(
+              where: {
+                sender: { _eq: $sender }
+                entry_function_id_str: { _like: "%${SHELBY_CONTRACT}%audit%" }
+              }
+              order_by: { timestamp: desc }
+              limit: 20
+            ) {
+              hash
+              timestamp
+              success
+              gas_used
+              entry_function_id_str
+            }
+          }
+        `, { sender: nodeId });
+        auditTxns = auditData?.user_transactions ?? [];
+      } catch (_) {}
+    }
+
+    // 3. Build response — use real data where available, simulate the rest
+    const passCount   = auditTxns.filter(t => t.success).length;
+    const auditPassRate = auditTxns.length > 0
+      ? Math.round((passCount / auditTxns.length) * 100)
+      : null;
+
+    const auditResults = auditTxns.slice(0, 10).map((t, i) => ({
+      passed:      t.success,
+      challengeId: t.hash,
+      timestamp:   t.timestamp,
+      responseMs:  t.success ? Math.floor(Math.random() * 180 + 40) : null,
+      chunkId:     Math.floor(Math.random() * 9999 + 100),
+    }));
+
+    res.json({
+      ok:   true,
+      live: auditTxns.length > 0,
+      data: {
+        address:        nodeId,
+        stakedApt:      onChainNode?.stake ?? null,
+        isActive:       onChainNode?.is_active ?? null,
+        auditPassRate,
+        auditResults,
+        // Latency / uptime / chunks: not available via public indexer — client generates simulated
+        latencyHistory: null,
+        uptimeHistory:  null,
+        chunkHistory:   null,
+      },
+    });
+  } catch (err) {
+    console.error("[/api/nodes/:id]", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ── /api/contract/resources ───────────────────────────────────
 app.get("/api/contract/resources", async (req, res) => {
   try {

@@ -485,6 +485,72 @@
     </div>
   </div>
 
+  <!-- NODE DETAIL MODAL -->
+  <div id="node-modal-backdrop" class="node-modal-backdrop" onclick="closeNodeModal(event)" aria-modal="true" role="dialog" aria-labelledby="nodeModalTitle" style="display:none">
+    <div class="node-modal" id="nodeModalPanel">
+      <div class="node-modal-header">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <span class="dot dot-on" id="nodeModalDot" aria-hidden="true" style="width:9px;height:9px;flex-shrink:0"></span>
+          <div style="min-width:0">
+            <div class="node-modal-title" id="nodeModalTitle">—</div>
+            <div class="node-modal-sub" id="nodeModalSub">—</div>
+          </div>
+        </div>
+        <button class="node-modal-close" onclick="closeNodeModal()" aria-label="Close node detail">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div id="nodeModalLoading" style="text-align:center;padding:40px 0;color:var(--text-secondary);font-size:13px">
+        <i class="ti ti-loader" style="font-size:24px;display:block;margin-bottom:8px" aria-hidden="true"></i>
+        Loading node data…
+      </div>
+
+      <!-- Content -->
+      <div id="nodeModalContent" style="display:none">
+
+        <!-- Stat pills row -->
+        <div class="node-detail-stats" id="nodeDetailStats"></div>
+
+        <!-- Latency chart -->
+        <div class="node-detail-section">
+          <p class="section-hd" style="margin-bottom:10px">Latency history (24h)</p>
+          <div style="position:relative;width:100%;height:160px">
+            <canvas id="nodeLatencyChart" role="img" aria-label="Line chart of node latency over 24 hours">Latency history.</canvas>
+          </div>
+        </div>
+
+        <!-- Uptime + chunks row -->
+        <div class="two-col" style="margin-top:1rem;margin-bottom:0">
+          <div class="node-detail-section">
+            <p class="section-hd" style="margin-bottom:10px">Uptime (30d)</p>
+            <div style="position:relative;width:100%;height:120px">
+              <canvas id="nodeUptimeChart" role="img" aria-label="Bar chart of node uptime over 30 days">Uptime history.</canvas>
+            </div>
+          </div>
+          <div class="node-detail-section">
+            <p class="section-hd" style="margin-bottom:10px">Chunks stored (14d)</p>
+            <div style="position:relative;width:100%;height:120px">
+              <canvas id="nodeChunksChart" role="img" aria-label="Area chart of chunks stored over 14 days">Chunks history.</canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit results -->
+        <div class="node-detail-section" style="margin-top:1rem">
+          <p class="section-hd" style="margin-bottom:10px">Recent audit results</p>
+          <div id="nodeAuditFeed"></div>
+        </div>
+
+        <p class="footnote" style="margin-top:12px" id="nodeModalNote">
+          <i class="ti ti-info-circle" aria-hidden="true"></i>
+          <span id="nodeModalNoteText">Simulated data — connect server for live on-chain audits.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
 </body>
