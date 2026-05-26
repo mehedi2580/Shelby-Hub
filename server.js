@@ -483,6 +483,54 @@ app.get("/api/contract/resources", async (req, res) => {
   }
 });
 
+// ── /api/upload ───────────────────────────────────────────────
+// Accepts a file (base64) and stores it as a blob on Shelby testnet
+// using the official SDK. Returns blob ID, tx hash, and metadata.
+app.post("/api/upload", async (req, res) => {
+  const { fileName, fileType, fileSizeBytes, data } = req.body;
+
+  if (!data || !fileName) {
+    return res.status(400).json({ ok: false, error: "fileName and data are required" });
+  }
+
+  if (fileSizeBytes > 10 * 1024 * 1024) {
+    return res.status(400).json({ ok: false, error: "File exceeds 10 MB limit" });
+  }
+
+  try {
+    // Convert base64 to Buffer
+    const fileBuffer = Buffer.from(data, "base64");
+
+    // Upload using Shelby SDK
+    const result = await shelbyClient.blob.store({
+      data:        fileBuffer,
+      contentType: fileType || "application/octet-stream",
+      metadata: {
+        fileName,
+        uploadedVia: "shelby-hub-dashboard",
+        uploadedAt:  new Date().toISOString(),
+      },
+    });
+
+    res.json({
+      ok:   true,
+      data: {
+        blobId:        result.blobId   ?? result.blob_id ?? result.id,
+        txHash:        result.txHash   ?? result.tx_hash ?? result.transaction_hash,
+        chunks:        result.chunks   ?? Math.ceil(fileSizeBytes / (256 * 1024)),
+        spCount:       result.spCount  ?? result.sp_count ?? null,
+        erasureFactor: result.erasure  ?? "10+4",
+        confirmedAt:   result.confirmedAt ?? new Date().toISOString(),
+        fileSizeBytes,
+        fileName,
+      },
+    });
+  } catch (err) {
+    console.error("[/api/upload]", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ── /api/health ───────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -514,5 +562,6 @@ app.listen(PORT, () => {
   console.log(`   GET /api/blobs/history`);
   console.log(`   GET /api/nodes`);
   console.log(`   GET /api/wallet/:address`);
-  console.log(`   GET /api/contract/resources\n`);
+  console.log(`   GET /api/contract/resources`);
+  console.log(`   POST /api/upload\n`);
 });
