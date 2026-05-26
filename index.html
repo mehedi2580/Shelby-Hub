@@ -1,666 +1,332 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Shelby Hub — Protocol Dashboard</title>
-  <meta name="description" content="Shelby protocol community dashboard — testnet tracker, node ROI calculator, docs, and developer profile."/>
-  <link rel="icon" href="https://avatars.githubusercontent.com/u/219037914?s=32&v=4" type="image/png"/>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700&family=Inter:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-  <script id="tailwind-config">
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            "surface-tint": "#b4c5ff",
-            "success": "#10b981",
-            "secondary-container": "#00e3fd",
-            "tertiary-fixed": "#e9ddff",
-            "inverse-on-surface": "#2e3037",
-            "surface-container-low": "#191b22",
-            "background": "#111319",
-            "on-primary-container": "#f3f3ff",
-            "inverse-primary": "#0053da",
-            "on-background": "#e2e2eb",
-            "on-error-container": "#ffdad6",
-            "on-error": "#690005",
-            "surface-container-high": "#282a30",
-            "on-secondary-fixed": "#001f24",
-            "on-secondary-container": "#00616d",
-            "on-surface-variant": "#c2c6d9",
-            "error": "#ef4444",
-            "on-primary-fixed": "#00174b",
-            "on-surface": "#e2e2eb",
-            "primary-fixed-dim": "#b4c5ff",
-            "outline-variant": "#424656",
-            "primary": "#b4c5ff",
-            "surface-dim": "#111319",
-            "warning": "#f59e0b",
-            "surface-container-highest": "#33343b",
-            "on-tertiary-fixed-variant": "#5516be",
-            "tertiary": "#d0bcff",
-            "secondary-fixed-dim": "#00daf3",
-            "on-primary": "#002a78",
-            "surface-variant": "#33343b",
-            "inverse-surface": "#e2e2eb",
-            "on-tertiary": "#3c0091",
-            "on-primary-fixed-variant": "#003ea8",
-            "surface-container-lowest": "#0c0e14",
-            "error-container": "#93000a",
-            "tertiary-fixed-dim": "#d0bcff",
-            "outline": "#2e374d",
-            "surface-bright": "#1e2538",
-            "secondary-fixed": "#9cf0ff",
-            "on-tertiary-fixed": "#23005c",
-            "secondary": "#bdf4ff",
-            "surface-container": "#1d1f26",
-            "on-secondary": "#00363d",
-            "on-secondary-fixed-variant": "#004f58",
-            "primary-container": "#0062ff",
-            "tertiary-container": "#7f4fe9",
-            "surface": "#121622",
-            "on-tertiary-container": "#f9f1ff",
-            "primary-fixed": "#dbe1ff"
-          },
-          borderRadius: {
-            DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"
-          },
-          fontFamily: {
-            "display-lg": ["Geist"],
-            "body-bold": ["Inter"],
-            "headline-md": ["Geist"],
-            "body-base": ["Inter"],
-            "label-caps": ["Geist"],
-            "stat-lg": ["Geist"]
-          },
-          fontSize: {
-            "display-lg": ["32px", {lineHeight:"40px", letterSpacing:"-0.02em", fontWeight:"700"}],
-            "headline-lg": ["24px", {lineHeight:"32px", letterSpacing:"-0.02em", fontWeight:"700"}],
-            "headline-md": ["20px", {lineHeight:"28px", letterSpacing:"-0.01em", fontWeight:"600"}],
-            "body-bold": ["14px", {lineHeight:"22px", letterSpacing:"0", fontWeight:"600"}],
-            "body-base": ["14px", {lineHeight:"22px", letterSpacing:"0", fontWeight:"400"}],
-            "label-caps": ["11px", {lineHeight:"16px", letterSpacing:"0.05em", fontWeight:"600"}],
-            "stat-lg": ["24px", {lineHeight:"32px", letterSpacing:"-0.01em", fontWeight:"600"}]
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    body { background-color: #111319; color: #e2e2eb; font-family: 'Inter', sans-serif; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #2e374d; border-radius: 10px; }
-    .page { display: none; }
-    .page.active { display: block; }
-    .nav-item-active { color: #bdf4ff !important; font-weight: 600; border-right: 2px solid #bdf4ff; background-color: #191b22; }
-    input[type=range] { accent-color: #bdf4ff; }
-    .live-pulse { animation: pulse-green 1.5s infinite; }
-    @keyframes pulse-green { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-    /* ── Sidebar: always a slide-in drawer, hidden by default ── */
-    #sidebar {
-      transform: translateX(-100%);
-      transition: transform 0.25s ease;
-    }
-    #sidebar.open {
-      transform: translateX(0);
-    }
-    /* Overlay: hidden by default, shown when sidebar is open */
-    #sidebar-overlay {
-      display: none;
-    }
-    #sidebar-overlay.visible {
-      display: block;
-    }
-  </style>
+  <meta name="description" content="Shelby protocol hub: testnet tracker, node ROI calculator, protocol docs, and developer profile." />
+  <link rel="icon" href="https://avatars.githubusercontent.com/u/219037914?s=32&v=4" type="image/png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-background text-on-background min-h-screen flex">
+<body>
 
-  <!-- Sidebar overlay: click anywhere outside to close -->
-  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-[60]" onclick="closeSidebar()" aria-hidden="true"></div>
-
-  <!-- ── SIDE NAV ─────────────────────────────────── -->
-  <aside id="sidebar" class="h-screen w-64 fixed left-0 top-0 border-r border-outline bg-background flex flex-col py-6 z-[70]">
-    <!-- Brand -->
-    <div class="px-6 mb-8 flex items-center gap-3">
-      <img src="https://avatars.githubusercontent.com/u/219037914?s=96&v=4" width="36" height="36" alt="Shelby logo" class="rounded-lg flex-shrink-0"/>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="nav-logo">
+        <img src="https://avatars.githubusercontent.com/u/219037914?s=96&v=4" width="34" height="34" alt="Shelby logo" style="border-radius:9px;display:block;" />
+      </div>
       <div>
-        <div class="font-display-lg text-xl font-bold text-primary">Shelby Hub</div>
-        <div class="text-on-surface-variant font-label-caps text-label-caps mt-0.5 uppercase tracking-wider">Protocol Dashboard</div>
+        <div class="nav-title">Shelby Hub</div>
+        <div class="nav-subtitle">Protocol dashboard</div>
+      </div>
+    </div>
+    <button class="hamburger" onclick="toggleDrawer()" aria-label="Toggle navigation menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-inner">
+      <div class="drawer-label">Navigation</div>
+      <div class="nav-items">
+        <button class="nav-item active" onclick="showPage('tracker', this)">
+          <i class="ti ti-chart-bar" aria-hidden="true"></i> Testnet tracker
+        </button>
+        <button class="nav-item" onclick="showPage('calculator', this)">
+          <i class="ti ti-calculator" aria-hidden="true"></i> Node ROI calculator
+        </button>
+        <button class="nav-item" onclick="showPage('learn', this)">
+          <i class="ti ti-book" aria-hidden="true"></i> Learn about Shelby
+        </button>
+        <div class="nav-divider"></div>
+        <button class="nav-item" onclick="showPage('developer', this)">
+          <i class="ti ti-user-circle" aria-hidden="true"></i> About developer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TESTNET TRACKER -->
+  <div id="page-tracker" class="page active">
+    <div class="top-row">
+      <div class="top-row-left">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="page-title">Testnet tracker</span>
+        <span class="badge">Early access</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a class="refresh-btn" href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="text-decoration:none">
+          <i class="ti ti-radar" aria-hidden="true"></i> Explorer
+        </a>
+        <button class="refresh-btn" onclick="refreshTracker()">
+          <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
+        </button>
       </div>
     </div>
 
-    <!-- Nav items -->
-    <nav class="flex-1 px-4 space-y-1">
-      <button onclick="showPage('tracker',this)" class="nav-btn w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200">
-        <span class="material-symbols-outlined mr-3 text-[20px]">monitoring</span>
-        <span class="font-body-base text-body-base">Testnet Tracker</span>
-      </button>
-      <button onclick="showPage('calculator',this)" class="nav-btn w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200">
-        <span class="material-symbols-outlined mr-3 text-[20px]">calculate</span>
-        <span class="font-body-base text-body-base">Node ROI Calculator</span>
-      </button>
-      <button onclick="showPage('learn',this)" class="nav-btn w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200">
-        <span class="material-symbols-outlined mr-3 text-[20px]">auto_stories</span>
-        <span class="font-body-base text-body-base">Learn About Shelby</span>
-      </button>
+    <p class="section-hd">Network snapshot</p>
+    <div class="metric-grid" id="metrics"></div>
 
-      <div class="border-t border-outline my-3"></div>
+    <div class="two-col">
+      <div class="card">
+        <p class="section-hd" style="margin-bottom:10px">Read/write activity (24h)</p>
+        <div class="chart-wrap"><canvas id="rwChart" role="img" aria-label="Line chart of 24h read and write activity on Shelby testnet">24h read/write data.</canvas></div>
+        <div class="chart-legend">
+          <span><span class="legend-sq" style="background:#378ADD"></span>Reads</span>
+          <span><span class="legend-sq" style="background:#1D9E75"></span>Writes</span>
+        </div>
+      </div>
+      <div class="card">
+        <p class="section-hd" style="margin-bottom:10px">Storage growth (14d)</p>
+        <div class="chart-wrap"><canvas id="storageChart" role="img" aria-label="Area chart of cumulative storage on Shelby testnet over 14 days">Storage growth data.</canvas></div>
+      </div>
+    </div>
 
-      <button onclick="showPage('developer',this)" class="nav-btn w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-surface-container transition-colors duration-200">
-        <span class="material-symbols-outlined mr-3 text-[20px]">account_circle</span>
-        <span class="font-body-base text-body-base">About Developer</span>
-      </button>
-    </nav>
+    <p class="section-hd">Network utilisation</p>
+    <div class="card" style="margin-bottom:1.25rem" id="utilBars"></div>
 
-    <!-- Footer: developer card -->
-    <div class="px-4 mt-auto">
-      <div class="flex items-center px-4 py-3 bg-surface-container rounded-lg border border-outline gap-3">
-        <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm flex-shrink-0">MH</div>
-        <div class="overflow-hidden">
-          <div class="font-body-bold text-sm text-on-surface truncate">Mehedi Hasan</div>
-          <div class="text-[10px] text-on-surface-variant uppercase tracking-wider">Web3 Developer</div>
+    <p class="section-hd">Storage provider nodes</p>
+    <div class="node-grid" id="nodeGrid"></div>
+
+    <div class="two-col">
+      <div class="card" id="eventFeed"><p class="section-hd" style="margin-bottom:8px">Live events</p></div>
+      <div class="card">
+        <p class="section-hd" style="margin-bottom:10px">Node status</p>
+        <div style="position:relative;width:100%;height:150px">
+          <canvas id="nodeChart" role="img" aria-label="Donut chart of node status breakdown">Node breakdown.</canvas>
+        </div>
+        <div class="node-legend" id="nodeLegend"></div>
+      </div>
+    </div>
+    <p class="footnote" id="tracker-note"><i class="ti ti-info-circle" aria-hidden="true"></i> Starting up — checking for live data from api.testnet.shelby.xyz…</p>
+  </div>
+
+  <!-- ROI CALCULATOR -->
+  <div id="page-calculator" class="page">
+    <div class="top-row">
+      <div class="top-row-left">
+        <span class="page-title">Node ROI calculator</span>
+        <span class="badge badge-blue">Estimate</span>
+      </div>
+    </div>
+    <p class="intro-text">Estimate your potential earnings as a Shelby Storage Provider node operator. Adjust the sliders to match your setup.</p>
+
+    <div class="two-col">
+      <div>
+        <p class="section-hd">Your configuration</p>
+        <div class="roi-form">
+          <div class="roi-row">
+            <span class="roi-label">Storage capacity (TB)</span>
+            <div class="roi-input-row"><input type="range" min="1" max="200" value="10" step="1" id="storage-tb" oninput="calcROI()"><span class="roi-val" id="storage-tb-out">10 TB</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">Network bandwidth (Gbps)</span>
+            <div class="roi-input-row"><input type="range" min="1" max="100" value="10" step="1" id="bandwidth" oninput="calcROI()"><span class="roi-val" id="bandwidth-out">10 Gbps</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">Stake amount (APT)</span>
+            <div class="roi-input-row"><input type="range" min="100" max="50000" value="5000" step="100" id="stake" oninput="calcROI()"><span class="roi-val" id="stake-out">5,000 APT</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">APT price (USD)</span>
+            <div class="roi-input-row"><input type="range" min="1" max="50" value="8" step="1" id="apt-price" oninput="calcROI()"><span class="roi-val" id="apt-price-out">$8</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">Utilisation rate (%)</span>
+            <div class="roi-input-row"><input type="range" min="10" max="100" value="60" step="5" id="util-rate" oninput="calcROI()"><span class="roi-val" id="util-rate-out">60%</span></div>
+          </div>
+          <div class="roi-row">
+            <span class="roi-label">Hardware cost (USD/mo)</span>
+            <div class="roi-input-row"><input type="range" min="50" max="2000" value="300" step="50" id="hw-cost" oninput="calcROI()"><span class="roi-val" id="hw-cost-out">$300</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="section-hd">Estimated returns</p>
+        <div class="roi-result-grid">
+          <div class="roi-result"><div class="roi-result-label">Monthly revenue</div><div class="roi-result-val pos" id="r-monthly">—</div></div>
+          <div class="roi-result"><div class="roi-result-label">Monthly profit</div><div class="roi-result-val pos" id="r-profit">—</div></div>
+          <div class="roi-result"><div class="roi-result-label">Annual revenue</div><div class="roi-result-val pos" id="r-annual">—</div></div>
+          <div class="roi-result"><div class="roi-result-label">APY estimate</div><div class="roi-result-val pos" id="r-apy">—</div></div>
+        </div>
+        <div class="roi-result" style="margin-bottom:1rem"><div class="roi-result-label">Break-even (months)</div><div class="roi-result-val" id="r-breakeven">—</div></div>
+        <p class="section-hd" style="margin-bottom:10px">12-month profit projection</p>
+        <div style="position:relative;width:100%;height:160px">
+          <canvas id="roiChart" role="img" aria-label="Bar chart showing 12-month cumulative profit projection">12-month projection.</canvas>
         </div>
       </div>
     </div>
-  </aside>
+    <div class="divider"></div>
+    <p class="footnote"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Estimates only. Actual earnings depend on network demand, token price, and protocol parameters. Not financial advice.</p>
+  </div>
 
-  <!-- ── MAIN ──────────────────────────────────────── -->
-  <main class="flex-1 flex flex-col min-h-screen">
+  <!-- LEARN -->
+  <div id="page-learn" class="page">
+    <div class="top-row">
+      <div class="top-row-left"><span class="page-title">Learn about Shelby</span></div>
+    </div>
+    <div class="info-hero">
+      <div class="info-hero-title">Web3's first cloud-grade hot storage protocol</div>
+      <div class="info-hero-sub">Shelby is co-developed by Aptos Labs and Jump Crypto. It delivers sub-second reads, token-gated access, and monetizable data for AI, streaming, and real-time Web3 applications — competitive with AWS S3 but fully decentralized.</div>
+    </div>
+    <p class="section-hd">Official links</p>
+    <div class="link-row">
+      <a class="link-btn" href="https://shelby.xyz" target="_blank" rel="noopener"><i class="ti ti-globe" aria-hidden="true"></i> shelby.xyz</a>
+      <a class="link-btn" href="https://docs.shelby.xyz/protocol" target="_blank" rel="noopener"><i class="ti ti-file-text" aria-hidden="true"></i> Documentation</a>
+      <a class="link-btn" href="https://x.com/shelbyserves" target="_blank" rel="noopener"><i class="ti ti-brand-x" aria-hidden="true"></i> X / Twitter</a>
+      <a class="link-btn" href="https://discord.gg/shelbyserves" target="_blank" rel="noopener"><i class="ti ti-brand-discord" aria-hidden="true"></i> Discord</a>
+    </div>
+    <p class="section-hd">Key features</p>
+    <div class="info-grid">
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-bolt" aria-hidden="true"></i></div><div class="info-card-title">Sub-second reads</div><div class="info-card-desc">Private fiber mesh enables CDN-grade latency with full decentralization.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-coin" aria-hidden="true"></i></div><div class="info-card-title">Incentivized reads</div><div class="info-card-desc">Nodes earn rewards for serving data — not just storing it.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-lock" aria-hidden="true"></i></div><div class="info-card-title">Token-gated access</div><div class="info-card-desc">Embed access rules at the protocol level. Pay-per-view or subscription models.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-shield-check" aria-hidden="true"></i></div><div class="info-card-title">Cryptographic proofs</div><div class="info-card-desc">Clay erasure coding + on-chain Aptos verification for data integrity.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-network" aria-hidden="true"></i></div><div class="info-card-title">Cross-chain ready</div><div class="info-card-desc">Supports Aptos, Solana, Ethereum L2s, Cosmos, and more.</div></div>
+      <div class="info-card"><div class="info-card-icon"><i class="ti ti-brand-aws" aria-hidden="true"></i></div><div class="info-card-title">S3-compatible API</div><div class="info-card-desc">Drop-in replacement for AWS S3 — minimal migration effort for developers.</div></div>
+    </div>
+    <p class="section-hd">How it works</p>
+    <div class="arch-row">
+      <div class="arch-item"><div class="arch-num">1</div><div><div class="arch-title">Aptos smart contracts</div><div class="arch-desc">On-chain source of truth. Manages blob metadata, placement groups, cryptographic commitments, auditing logic, and slashing conditions.</div></div></div>
+      <div class="arch-item"><div class="arch-num">2</div><div><div class="arch-title">Shelby RPC servers</div><div class="arch-desc">Client gateway. Accepts S3-compatible reads/writes, handles Clay erasure encoding, manages micropayment sessions, and returns cryptographic provenance receipts.</div></div></div>
+      <div class="arch-item"><div class="arch-num">3</div><div><div class="arch-title">Storage provider nodes</div><div class="arch-desc">Decentralized nodes (Cavalier by Jump Crypto). Store erasure-coded chunks, respond to audit challenges, and serve data over the private fiber network.</div></div></div>
+    </div>
+    <p class="section-hd">Developer resources</p>
+    <div class="arch-row">
+      <a class="arch-item" href="https://github.com/shelby/shelby-quickstart" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#EAF3DE"><i class="ti ti-brand-github" style="color:#3B6D11;font-size:14px" aria-hidden="true"></i></div>
+        <div style="flex:1">
+          <div class="arch-title">shelby-quickstart <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div>
+          <div class="arch-desc">Simple samples to start serving with Shelby. Upload, list &amp; download blobs via CLI. Node v22+, TypeScript.</div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--text-tertiary)">
+            <span><i class="ti ti-star" style="font-size:11px" aria-hidden="true"></i> 284</span>
+            <span><i class="ti ti-git-fork" style="font-size:11px" aria-hidden="true"></i> 189</span>
+            <span style="color:#3178C6">TypeScript</span>
+          </div>
+        </div>
+      </a>
+      <a class="arch-item" href="https://github.com/shelby/examples" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#E6F1FB"><i class="ti ti-brand-github" style="color:#185FA5;font-size:14px" aria-hidden="true"></i></div>
+        <div style="flex:1">
+          <div class="arch-title">shelby/examples <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div>
+          <div class="arch-desc">5 example apps: AI image generation, cross-chain accounts, blob upload/download/list. Turborepo monorepo.</div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--text-tertiary)">
+            <span><i class="ti ti-star" style="font-size:11px" aria-hidden="true"></i> 112</span>
+            <span><i class="ti ti-git-fork" style="font-size:11px" aria-hidden="true"></i> 55</span>
+            <span style="color:#3178C6">TypeScript</span>
+          </div>
+        </div>
+      </a>
+      <a class="arch-item" href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#F0EDFE"><i class="ti ti-radar" style="color:#3C3489;font-size:14px" aria-hidden="true"></i></div>
+        <div style="flex:1">
+          <div class="arch-title">Shelby Explorer — shelbynet <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div>
+          <div class="arch-desc">Live block explorer for Shelbynet. Browse blobs, storage providers, transactions, and on-chain audit proofs.</div>
+          <div style="display:flex;gap:8px;margin-top:6px;font-size:11px">
+            <span style="background:var(--green-light);color:var(--green-text);padding:1px 7px;border-radius:99px;font-weight:500">● Live</span>
+            <span style="color:var(--text-tertiary)">explorer.shelby.xyz</span>
+          </div>
+        </div>
+      </a>
+      <a class="arch-item" href="https://docs.shelby.xyz/protocol/quickstart" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#FEF3D7"><i class="ti ti-player-play" style="color:#BA7517;font-size:13px" aria-hidden="true"></i></div>
+        <div><div class="arch-title">Quickstart guide <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div><div class="arch-desc">Step-by-step docs: config, faucet, upload, list, download your first blob.</div></div>
+      </a>
+      <a class="arch-item" href="https://docs.shelby.xyz/protocol/architecture/overview" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#E6F1FB"><i class="ti ti-layout-distribute-horizontal" style="color:#185FA5;font-size:13px" aria-hidden="true"></i></div>
+        <div><div class="arch-title">Architecture overview <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div><div class="arch-desc">Deep dive into RPCs, storage providers, smart contracts, and network topology.</div></div>
+      </a>
+      <a class="arch-item" href="https://shelby.xyz/whitepaper.pdf" target="_blank" rel="noopener" style="text-decoration:none">
+        <div class="arch-icon-circle" style="background:#F1EFE8"><i class="ti ti-file-text" style="color:#5F5E5A;font-size:13px" aria-hidden="true"></i></div>
+        <div><div class="arch-title">Whitepaper <i class="ti ti-external-link" style="font-size:12px;color:#888" aria-hidden="true"></i></div><div class="arch-desc">Full technical specification by Aptos Labs and Jump Crypto.</div></div>
+      </a>
+    </div>
+    <div class="status-box">
+      <p class="status-box-title">Current status</p>
+      <p class="status-box-text">Shelby is live on <strong>Shelbynet (Early Access)</strong> as of early 2026. Main API: <code>api.testnet.shelby.xyz</code>. Browse live activity at <a href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="color:var(--accent)">explorer.shelby.xyz/shelbynet</a>. Full production expected later in 2026.</p>
+    </div>
+  </div>
 
-    <!-- TOP BAR -->
-    <header class="flex justify-between items-center h-16 px-6 w-full sticky top-0 z-[80] bg-surface border-b border-outline">
-      <!-- Hamburger menu button — always visible -->
-      <button class="mr-3 p-2 text-on-surface-variant hover:text-primary transition-colors rounded-lg hover:bg-surface-container" onclick="toggleSidebar()" aria-label="Toggle menu">
-        <span class="material-symbols-outlined">menu</span>
-      </button>
-      <!-- Search -->
-      <div class="relative flex-1 max-w-md">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
-        <input class="w-full bg-surface-bright border border-outline rounded-lg py-2 pl-10 pr-4 text-body-base focus:outline-none focus:border-secondary transition-colors placeholder:text-on-surface-variant/50 text-on-surface" placeholder="Search docs, tools, or nodes…" type="text"/>
+  <!-- ABOUT DEVELOPER -->
+  <div id="page-developer" class="page">
+    <div class="top-row">
+      <div class="top-row-left"><span class="page-title">About developer</span></div>
+    </div>
+
+    <div class="dev-hero">
+      <div class="dev-avatar">MH</div>
+      <div class="dev-hero-body">
+        <div class="dev-hero-name">Mehedi Hasan</div>
+        <div class="dev-hero-role">Web3 developer &amp; blockchain community builder</div>
+        <div class="dev-tags">
+          <span class="dev-tag dev-tag-blue"><i class="ti ti-code" aria-hidden="true"></i> Smart contracts</span>
+          <span class="dev-tag dev-tag-green"><i class="ti ti-server" aria-hidden="true"></i> DePIN / nodes</span>
+          <span class="dev-tag dev-tag-purple"><i class="ti ti-users" aria-hidden="true"></i> Community building</span>
+        </div>
+        <p class="dev-bio">I'm Mehedi — a Web3 developer passionate about decentralized infrastructure and blockchain-based communities. My journey started by exploring on-chain protocols and grew into hands-on node operation, smart contract development, and building tools that make Web3 more accessible. I've worked across multiple ecosystems — from EVM chains to emerging protocols like Shelby — and I believe the future of the internet lives on open, permissionless infrastructure. When I'm not writing code, I'm helping grow communities around the protocols I care about.</p>
       </div>
-      <!-- Right -->
-      <div class="flex items-center gap-3 ml-4">
-        <a href="https://docs.shelby.xyz/protocol" target="_blank" class="hidden md:block font-label-caps text-label-caps text-on-surface-variant hover:text-secondary transition-colors uppercase tracking-wider">Docs</a>
-        <a href="https://x.com/shelbyserves" target="_blank" class="hidden md:block font-label-caps text-label-caps text-on-surface-variant hover:text-secondary transition-colors uppercase tracking-wider">Twitter</a>
-        <a href="https://discord.gg/shelbyserves" target="_blank" class="hidden md:block font-label-caps text-label-caps text-on-surface-variant hover:text-secondary transition-colors uppercase tracking-wider">Discord</a>
-        <div id="live-indicator" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container border border-outline text-label-caps font-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">
-          <span class="w-1.5 h-1.5 rounded-full bg-warning live-pulse" id="live-dot"></span>
-          <span id="live-label">Checking…</span>
-        </div>
+    </div>
+
+    <p class="section-hd">Experience &amp; journey</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div><div class="tl-year">Early days</div><div class="tl-title">Discovered blockchain &amp; DeFi</div><div class="tl-desc">Started exploring Ethereum, DeFi protocols, and on-chain mechanics. Learned Solidity and deployed first smart contracts on testnets.</div></div>
       </div>
-    </header>
-
-    <!-- ── PAGES ─────────────────────────────────── -->
-    <div class="flex-1 p-6 overflow-y-auto custom-scrollbar">
-
-      <!-- ════════════════════════════════════════════
-           TESTNET TRACKER
-      ════════════════════════════════════════════ -->
-      <div id="page-tracker" class="page active max-w-[960px] mx-auto space-y-6">
-        <!-- Header -->
-        <div class="flex justify-between items-end">
-          <div>
-            <h1 class="font-display-lg text-display-lg text-on-surface">Testnet Tracker</h1>
-            <p class="text-on-surface-variant font-body-base mt-1">Live network activity on Shelby's decentralized hot storage protocol.</p>
-          </div>
-          <button onclick="refreshTracker()" class="flex items-center gap-2 bg-surface-bright border border-outline px-4 py-2 rounded-lg text-label-caps font-label-caps text-on-surface hover:border-secondary transition-colors uppercase tracking-wider text-[11px]">
-            <span class="material-symbols-outlined text-[16px]">refresh</span>REFRESH
-          </button>
-        </div>
-
-        <!-- Stat cards row -->
-        <div id="metrics" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-
-        <!-- Bento grid -->
-        <div class="grid grid-cols-12 gap-4">
-
-          <!-- Read/Write chart (large) -->
-          <div class="col-span-12 md:col-span-8 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all group">
-            <div class="flex items-center justify-between mb-4">
-              <div>
-                <h3 class="font-headline-md text-headline-md text-on-surface">Read / Write Activity</h3>
-                <p class="text-on-surface-variant font-body-base text-xs mt-0.5">Last 24 hours · simulated</p>
-              </div>
-              <div class="flex gap-3 text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider">
-                <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-primary inline-block rounded"></span>Reads</span>
-                <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-secondary inline-block rounded"></span>Writes</span>
-              </div>
-            </div>
-            <div class="relative h-48"><canvas id="rwChart" aria-label="24h read write activity"></canvas></div>
-          </div>
-
-          <!-- Node donut (small) -->
-          <div class="col-span-12 md:col-span-4 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all">
-            <h3 class="font-body-bold text-on-surface mb-1">Node Status</h3>
-            <p class="text-on-surface-variant text-xs mb-4">16 storage providers · shelbynet</p>
-            <div class="relative h-36"><canvas id="nodeChart" aria-label="Node status donut"></canvas></div>
-            <div id="nodeLegend" class="flex justify-center gap-4 mt-3 text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider"></div>
-          </div>
-
-          <!-- Storage growth (medium) -->
-          <div class="col-span-12 md:col-span-5 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all group">
-            <div class="flex justify-between items-start mb-4">
-              <div>
-                <h3 class="font-body-bold text-on-surface">Storage Growth</h3>
-                <p class="text-on-surface-variant text-xs mt-0.5">14-day cumulative</p>
-              </div>
-              <span id="storage-live-badge" class="hidden items-center gap-1 px-2 py-0.5 rounded bg-success/10 border border-success/20 text-success font-label-caps text-[10px] uppercase tracking-wider">
-                <span class="w-1.5 h-1.5 rounded-full bg-success"></span>LIVE
-              </span>
-            </div>
-            <div class="relative h-40"><canvas id="storageChart" aria-label="Storage growth chart"></canvas></div>
-          </div>
-
-          <!-- Util bars (medium) -->
-          <div class="col-span-12 md:col-span-4 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all">
-            <h3 class="font-body-bold text-on-surface mb-4">Network Utilisation</h3>
-            <div id="utilBars" class="space-y-3"></div>
-          </div>
-
-          <!-- Live feed (small) -->
-          <div class="col-span-12 md:col-span-3 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all">
-            <div class="flex items-center gap-2 mb-4">
-              <span class="w-1.5 h-1.5 rounded-full bg-success live-pulse"></span>
-              <h3 class="font-body-bold text-on-surface">Live Events</h3>
-            </div>
-            <div id="eventFeed" class="space-y-3"></div>
-          </div>
-
-          <!-- Nodes grid -->
-          <div class="col-span-12 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-headline-md text-headline-md text-on-surface">Storage Provider Nodes</h3>
-              <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Shelbynet · 16 nodes</span>
-            </div>
-            <div id="nodeGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3"></div>
-          </div>
-
-        </div>
-        <p id="tracker-note" class="text-[11px] text-on-surface-variant flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[14px]">info</span>
-          Starting up — checking for live data…
-        </p>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div><div class="tl-year">Node operations</div><div class="tl-title">Running decentralized infrastructure</div><div class="tl-desc">Expanded into validator and storage node operation across multiple protocols. Deep interest in DePIN and decentralized storage networks.</div></div>
       </div>
-
-      <!-- ════════════════════════════════════════════
-           ROI CALCULATOR
-      ════════════════════════════════════════════ -->
-      <div id="page-calculator" class="page max-w-[960px] mx-auto space-y-6">
-        <div>
-          <h1 class="font-display-lg text-display-lg text-on-surface">Node ROI Calculator</h1>
-          <p class="text-on-surface-variant font-body-base mt-1">Estimate your earnings as a Shelby Storage Provider. Adjust the sliders to match your setup.</p>
-        </div>
-
-        <div class="grid grid-cols-12 gap-4">
-          <!-- Sliders -->
-          <div class="col-span-12 md:col-span-6 bg-surface border border-outline p-6 rounded-xl">
-            <h3 class="font-headline-md text-headline-md text-on-surface mb-6">Your Configuration</h3>
-            <div class="space-y-5" id="roi-sliders">
-              <div class="roi-row">
-                <div class="flex justify-between mb-1.5"><span class="font-body-base text-on-surface-variant text-sm">Storage capacity</span><span class="font-body-bold text-secondary text-sm" id="storage-tb-out">10 TB</span></div>
-                <input type="range" min="1" max="200" value="10" step="1" id="storage-tb" oninput="calcROI()" class="w-full"/>
-              </div>
-              <div class="roi-row">
-                <div class="flex justify-between mb-1.5"><span class="font-body-base text-on-surface-variant text-sm">Network bandwidth</span><span class="font-body-bold text-secondary text-sm" id="bandwidth-out">10 Gbps</span></div>
-                <input type="range" min="1" max="100" value="10" step="1" id="bandwidth" oninput="calcROI()" class="w-full"/>
-              </div>
-              <div class="roi-row">
-                <div class="flex justify-between mb-1.5"><span class="font-body-base text-on-surface-variant text-sm">Stake amount (APT)</span><span class="font-body-bold text-secondary text-sm" id="stake-out">5,000 APT</span></div>
-                <input type="range" min="100" max="50000" value="5000" step="100" id="stake" oninput="calcROI()" class="w-full"/>
-              </div>
-              <div class="roi-row">
-                <div class="flex justify-between mb-1.5"><span class="font-body-base text-on-surface-variant text-sm">APT price (USD)</span><span class="font-body-bold text-secondary text-sm" id="apt-price-out">$8</span></div>
-                <input type="range" min="1" max="50" value="8" step="1" id="apt-price" oninput="calcROI()" class="w-full"/>
-              </div>
-              <div class="roi-row">
-                <div class="flex justify-between mb-1.5"><span class="font-body-base text-on-surface-variant text-sm">Utilisation rate</span><span class="font-body-bold text-secondary text-sm" id="util-rate-out">60%</span></div>
-                <input type="range" min="10" max="100" value="60" step="5" id="util-rate" oninput="calcROI()" class="w-full"/>
-              </div>
-              <div class="roi-row">
-                <div class="flex justify-between mb-1.5"><span class="font-body-base text-on-surface-variant text-sm">Hardware cost (USD/mo)</span><span class="font-body-bold text-secondary text-sm" id="hw-cost-out">$300</span></div>
-                <input type="range" min="50" max="2000" value="300" step="50" id="hw-cost" oninput="calcROI()" class="w-full"/>
-              </div>
-            </div>
-          </div>
-
-          <!-- Results -->
-          <div class="col-span-12 md:col-span-6 space-y-4">
-            <!-- Stat cards -->
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-surface border border-outline p-5 rounded-xl hover:border-secondary transition-all">
-                <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-2">Monthly Revenue</div>
-                <div class="font-stat-lg text-stat-lg text-secondary" id="r-monthly">—</div>
-              </div>
-              <div class="bg-surface border border-outline p-5 rounded-xl hover:border-secondary transition-all">
-                <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-2">Monthly Profit</div>
-                <div class="font-stat-lg text-stat-lg text-success" id="r-profit">—</div>
-              </div>
-              <div class="bg-surface border border-outline p-5 rounded-xl hover:border-secondary transition-all">
-                <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-2">Annual Revenue</div>
-                <div class="font-stat-lg text-stat-lg text-primary" id="r-annual">—</div>
-              </div>
-              <div class="bg-surface border border-outline p-5 rounded-xl hover:border-secondary transition-all">
-                <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-2">APY Estimate</div>
-                <div class="font-stat-lg text-stat-lg text-tertiary" id="r-apy">—</div>
-              </div>
-            </div>
-            <div class="bg-surface border border-outline p-5 rounded-xl">
-              <div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-1">Break-even Period</div>
-              <div class="font-stat-lg text-stat-lg text-on-surface" id="r-breakeven">—</div>
-            </div>
-            <!-- Chart -->
-            <div class="bg-surface border border-outline p-5 rounded-xl">
-              <div class="font-body-bold text-on-surface mb-3">12-Month Profit Projection</div>
-              <div class="relative h-40"><canvas id="roiChart" aria-label="12 month profit projection"></canvas></div>
-            </div>
-          </div>
-        </div>
-
-        <p class="text-[11px] text-on-surface-variant flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[14px]">warning</span>
-          Estimates only. Actual earnings depend on network demand, token price, and protocol parameters. Not financial advice.
-        </p>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div><div class="tl-year">Community</div><div class="tl-title">Building Web3 communities</div><div class="tl-desc">Became active in protocol communities — creating educational content, onboarding new members, and running campaigns to grow decentralized ecosystems.</div></div>
       </div>
-
-      <!-- ════════════════════════════════════════════
-           LEARN ABOUT SHELBY
-      ════════════════════════════════════════════ -->
-      <div id="page-learn" class="page max-w-[960px] mx-auto space-y-6">
-        <div>
-          <h1 class="font-display-lg text-display-lg text-on-surface">Learn About Shelby</h1>
-          <p class="text-on-surface-variant font-body-base mt-1">Web3's first cloud-grade hot storage protocol, co-developed by Aptos Labs and Jump Crypto.</p>
-        </div>
-
-        <!-- Hero card -->
-        <div class="bg-surface border border-outline p-8 rounded-xl relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-          <div class="relative">
-            <div class="flex items-center gap-2 mb-3">
-              <span class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-success/10 border border-success/20 text-success font-label-caps text-[10px] uppercase tracking-wider">
-                <span class="w-1.5 h-1.5 rounded-full bg-success live-pulse"></span> Testnet Live
-              </span>
-              <span class="px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label-caps text-[10px] uppercase tracking-wider">Early Access</span>
-            </div>
-            <h2 class="font-display-lg text-display-lg text-on-surface mb-3 max-w-lg">Cloud-grade speed. Blockchain-grade trust.</h2>
-            <p class="text-on-surface-variant font-body-base max-w-2xl mb-6">Shelby delivers sub-second reads, token-gated access, and monetizable data for AI, streaming, and real-time Web3 applications — competitive with AWS S3 but fully decentralized across erasure-coded storage providers.</p>
-            <div class="flex flex-wrap gap-3">
-              <a href="https://shelby.xyz" target="_blank" rel="noopener" class="flex items-center gap-2 bg-primary-container text-on-primary-container font-body-bold text-sm px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
-                <span class="material-symbols-outlined text-[18px]">language</span> shelby.xyz
-              </a>
-              <a href="https://docs.shelby.xyz/protocol" target="_blank" rel="noopener" class="flex items-center gap-2 bg-surface-bright border border-outline text-on-surface font-body-bold text-sm px-4 py-2 rounded-lg hover:border-secondary transition-colors">
-                <span class="material-symbols-outlined text-[18px]">description</span> Documentation
-              </a>
-              <a href="https://x.com/shelbyserves" target="_blank" rel="noopener" class="flex items-center gap-2 bg-surface-bright border border-outline text-on-surface font-body-bold text-sm px-4 py-2 rounded-lg hover:border-secondary transition-colors">
-                <span class="material-symbols-outlined text-[18px]">alternate_email</span> X / Twitter
-              </a>
-              <a href="https://discord.gg/shelbyserves" target="_blank" rel="noopener" class="flex items-center gap-2 bg-surface-bright border border-outline text-on-surface font-body-bold text-sm px-4 py-2 rounded-lg hover:border-secondary transition-colors">
-                <span class="material-symbols-outlined text-[18px]">forum</span> Discord
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Feature bento grid -->
-        <div class="grid grid-cols-12 gap-4">
-          <!-- Featured card -->
-          <div class="col-span-12 md:col-span-8 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all group flex flex-col justify-between">
-            <div>
-              <div class="flex justify-between items-start mb-6">
-                <div class="p-3 bg-primary/10 rounded-lg text-primary border border-primary/20">
-                  <span class="material-symbols-outlined text-[32px]">bolt</span>
-                </div>
-                <span class="flex items-center gap-1.5 px-2 py-1 rounded bg-success/10 border border-success/20 text-success font-label-caps text-[10px] uppercase tracking-wider">
-                  <span class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_5px_rgba(16,185,129,0.8)]"></span>LIVE
-                </span>
-              </div>
-              <h3 class="font-headline-md text-headline-md text-on-surface mb-2">Sub-second reads at global scale</h3>
-              <p class="text-on-surface-variant font-body-base max-w-lg mb-6">Private fiber mesh between nodes enables CDN-grade latency without the centralization. Erasure coding (Clay encoding) ensures durability. S3-compatible API means zero migration effort.</p>
-            </div>
-            <div class="flex items-center justify-between border-t border-outline pt-5">
-              <div class="flex gap-2 text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider">
-                <span class="px-2 py-1 rounded bg-surface-bright border border-outline">Aptos L1</span>
-                <span class="px-2 py-1 rounded bg-surface-bright border border-outline">16 SPs</span>
-                <span class="px-2 py-1 rounded bg-surface-bright border border-outline">10 TiB</span>
-              </div>
-              <a href="https://docs.shelby.xyz/protocol/architecture/overview" target="_blank" class="text-secondary font-body-bold text-sm flex items-center gap-2 group-hover:translate-x-1 transition-transform">
-                Architecture <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </a>
-            </div>
-          </div>
-
-          <!-- Token-gated -->
-          <div class="col-span-12 md:col-span-4 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all group">
-            <div class="mb-4 text-on-surface-variant group-hover:text-primary transition-colors">
-              <span class="material-symbols-outlined text-[28px]">lock</span>
-            </div>
-            <h3 class="font-body-bold text-on-surface text-lg mb-2">Token-gated Access</h3>
-            <p class="text-on-surface-variant font-body-base text-xs mb-5">Embed on-chain access rules at the protocol level — pay-per-view, subscriptions, or NFT-gated content.</p>
-            <div class="w-full bg-surface-bright h-1 rounded-full overflow-hidden">
-              <div class="bg-primary h-full w-4/5"></div>
-            </div>
-            <div class="mt-2 flex justify-between font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
-              <span>Access control</span><span class="text-success">On-chain</span>
-            </div>
-          </div>
-
-          <!-- Latency -->
-          <div class="col-span-12 md:col-span-4 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all group">
-            <div class="mb-4 text-on-surface-variant group-hover:text-secondary transition-colors">
-              <span class="material-symbols-outlined text-[28px]">speed</span>
-            </div>
-            <h3 class="font-body-bold text-on-surface text-lg mb-2">Global Latency</h3>
-            <div class="space-y-2 mt-3">
-              <div class="flex justify-between text-xs"><span class="text-on-surface-variant">North America</span><span class="text-success font-mono">~18ms</span></div>
-              <div class="flex justify-between text-xs"><span class="text-on-surface-variant">Europe West</span><span class="text-success font-mono">~24ms</span></div>
-              <div class="flex justify-between text-xs"><span class="text-on-surface-variant">Asia Pacific</span><span class="text-warning font-mono">~142ms</span></div>
-            </div>
-          </div>
-
-          <!-- Architecture steps — large -->
-          <div class="col-span-12 md:col-span-8 bg-surface border border-outline p-6 rounded-xl hover:border-secondary transition-all group overflow-hidden relative">
-            <h3 class="font-headline-md text-headline-md text-on-surface mb-5">How It Works</h3>
-            <div class="flex flex-col gap-4">
-              <div class="flex gap-4 items-start">
-                <div class="w-7 h-7 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
-                <div><div class="font-body-bold text-on-surface mb-0.5">Aptos Smart Contracts</div><div class="text-on-surface-variant text-xs leading-relaxed">On-chain source of truth. Manages blob metadata, placement groups, cryptographic commitments, auditing logic, and slashing.</div></div>
-              </div>
-              <div class="flex gap-4 items-start">
-                <div class="w-7 h-7 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</div>
-                <div><div class="font-body-bold text-on-surface mb-0.5">Shelby RPC Servers</div><div class="text-on-surface-variant text-xs leading-relaxed">Client gateway. Accepts S3-compatible reads/writes, handles Clay erasure encoding, manages micropayment sessions, returns cryptographic provenance receipts.</div></div>
-              </div>
-              <div class="flex gap-4 items-start">
-                <div class="w-7 h-7 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</div>
-                <div><div class="font-body-bold text-on-surface mb-0.5">Storage Provider Nodes</div><div class="text-on-surface-variant text-xs leading-relaxed">Cavalier implementation by Jump Crypto. Store erasure-coded chunks, respond to audit challenges, serve data over the private fiber network.</div></div>
-              </div>
-            </div>
-            <div class="flex gap-3 mt-6 flex-wrap">
-              <a href="https://docs.shelby.xyz/protocol/quickstart" target="_blank" class="flex items-center gap-2 text-secondary font-body-bold text-sm group-hover:translate-x-0.5 transition-transform">
-                Quickstart <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </a>
-              <a href="https://github.com/shelby/shelby-quickstart" target="_blank" class="flex items-center gap-2 text-on-surface-variant font-body-bold text-sm hover:text-secondary transition-colors">
-                GitHub Examples <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </a>
-            </div>
-          </div>
-
-          <!-- Dev resources small cards -->
-          <div class="col-span-12 md:col-span-4 space-y-4">
-            <a href="https://github.com/shelby/shelby-quickstart" target="_blank" class="block bg-surface border border-outline p-5 rounded-xl hover:border-secondary transition-all group">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">code</span>
-                <h4 class="font-body-bold text-on-surface text-sm">Quickstart Repo</h4>
-              </div>
-              <p class="text-on-surface-variant text-xs">Upload, list & download blobs via CLI. Node v22+ required.</p>
-              <div class="flex gap-3 mt-3 text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider">
-                <span>⭐ 284</span><span>🍴 189</span><span class="text-primary">TypeScript</span>
-              </div>
-            </a>
-            <a href="https://github.com/shelby/examples" target="_blank" class="block bg-surface border border-outline p-5 rounded-xl hover:border-secondary transition-all group">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">folder_copy</span>
-                <h4 class="font-body-bold text-on-surface text-sm">Examples Repo</h4>
-              </div>
-              <p class="text-on-surface-variant text-xs">AI image gen, cross-chain accounts, blob upload/download — Turborepo monorepo.</p>
-              <div class="flex gap-3 mt-3 text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider">
-                <span>⭐ 112</span><span>🍴 55</span><span class="text-primary">TypeScript</span>
-              </div>
-            </a>
-            <a href="https://explorer.shelby.xyz/shelbynet" target="_blank" class="block bg-surface border border-outline p-5 rounded-xl hover:border-secondary transition-all group">
-              <div class="flex items-center gap-3 mb-2">
-                <span class="material-symbols-outlined text-on-surface-variant group-hover:text-success transition-colors">travel_explore</span>
-                <h4 class="font-body-bold text-on-surface text-sm">Shelbynet Explorer</h4>
-              </div>
-              <p class="text-on-surface-variant text-xs">Browse blobs, SPs, transactions, and on-chain audit proofs.</p>
-              <span class="mt-3 inline-flex items-center gap-1 text-success text-[10px] font-label-caps uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-success live-pulse"></span>Live</span>
-            </a>
-          </div>
-
-          <!-- Status box -->
-          <div class="col-span-12 bg-surface-container-low border border-outline p-6 rounded-xl flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
-            <div>
-              <div class="font-body-bold text-on-surface mb-1 flex items-center gap-2">
-                <span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 border border-success/20 text-success font-label-caps text-[10px] uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-success live-pulse"></span>Testnet Live</span>
-                Current network status
-              </div>
-              <p class="text-on-surface-variant text-xs">RPC: <code class="bg-surface-bright px-1.5 py-0.5 rounded text-primary">api.testnet.shelby.xyz</code> · Contract: <code class="bg-surface-bright px-1.5 py-0.5 rounded text-primary">0x85fd…8e6a</code> · Network: <code class="bg-surface-bright px-1.5 py-0.5 rounded text-primary">TESTNET</code></p>
-            </div>
-            <a href="https://explorer.shelby.xyz/shelbynet" target="_blank" class="flex items-center gap-2 bg-primary-container text-on-primary-container font-body-bold text-sm px-4 py-2 rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap flex-shrink-0">
-              Open Explorer <span class="material-symbols-outlined text-[18px]">open_in_new</span>
-            </a>
-          </div>
-
-        </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div><div class="tl-year">Now</div><div class="tl-title">Building on Shelby protocol</div><div class="tl-desc">Contributing to the Shelby ecosystem — building community tools, dashboards, and infrastructure to help developers and node operators get the most from the protocol.</div></div>
       </div>
+    </div>
 
-      <!-- ════════════════════════════════════════════
-           ABOUT DEVELOPER
-      ════════════════════════════════════════════ -->
-      <div id="page-developer" class="page max-w-[960px] mx-auto space-y-6">
-        <div>
-          <h1 class="font-display-lg text-display-lg text-on-surface">About Developer</h1>
-          <p class="text-on-surface-variant font-body-base mt-1">The builder behind Shelby Hub.</p>
-        </div>
+    <p class="section-hd">Skills &amp; focus areas</p>
+    <div class="skill-grid">
+      <div class="skill-item"><i class="ti ti-brand-solidity" aria-hidden="true"></i> Smart contract development</div>
+      <div class="skill-item"><i class="ti ti-server" aria-hidden="true"></i> Node &amp; validator operation</div>
+      <div class="skill-item"><i class="ti ti-database" aria-hidden="true"></i> Decentralized storage</div>
+      <div class="skill-item"><i class="ti ti-chart-line" aria-hidden="true"></i> DeFi &amp; tokenomics</div>
+      <div class="skill-item"><i class="ti ti-users" aria-hidden="true"></i> Community management</div>
+      <div class="skill-item"><i class="ti ti-code" aria-hidden="true"></i> Web3 frontend tools</div>
+      <div class="skill-item"><i class="ti ti-network" aria-hidden="true"></i> Cross-chain protocols</div>
+      <div class="skill-item"><i class="ti ti-shield-check" aria-hidden="true"></i> Protocol research</div>
+    </div>
 
-        <div class="grid grid-cols-12 gap-4">
+    <p class="section-hd">Connect with me</p>
+    <div class="social-grid">
+      <a class="social-card" href="https://github.com/mehedi2580" target="_blank" rel="noopener">
+        <div class="social-icon social-icon-gh"><i class="ti ti-brand-github" aria-hidden="true"></i></div>
+        <div><div class="social-name">GitHub</div><div class="social-handle">mehedi2580</div></div>
+      </a>
+      <a class="social-card" href="https://discord.gg/MD4gEG8B" target="_blank" rel="noopener">
+        <div class="social-icon social-icon-dc"><i class="ti ti-brand-discord" aria-hidden="true"></i></div>
+        <div><div class="social-name">Discord</div><div class="social-handle">Join server</div></div>
+      </a>
+      <a class="social-card" href="https://x.com/0xZeroBit" target="_blank" rel="noopener">
+        <div class="social-icon social-icon-tw"><i class="ti ti-brand-x" aria-hidden="true"></i></div>
+        <div><div class="social-name">X / Twitter</div><div class="social-handle">@0xZeroBit</div></div>
+      </a>
+      <a class="social-card" href="https://t.me/Mehedi322" target="_blank" rel="noopener">
+        <div class="social-icon social-icon-tg"><i class="ti ti-brand-telegram" aria-hidden="true"></i></div>
+        <div><div class="social-name">Telegram</div><div class="social-handle">@Mehedi322</div></div>
+      </a>
+    </div>
 
-          <!-- Hero card -->
-          <div class="col-span-12 md:col-span-8 bg-surface border border-outline p-8 rounded-xl hover:border-secondary transition-all group flex flex-col justify-between relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-48 h-48 bg-secondary/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-            <div>
-              <div class="flex items-start gap-5 mb-6">
-                <div class="w-16 h-16 rounded-2xl bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xl flex-shrink-0">MH</div>
-                <div>
-                  <h2 class="font-headline-md text-headline-md text-on-surface">Mehedi Hasan</h2>
-                  <p class="text-on-surface-variant font-body-base text-sm mt-0.5">Web3 Developer · Blockchain Community Builder</p>
-                  <div class="flex flex-wrap gap-2 mt-3">
-                    <span class="px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label-caps text-[10px] uppercase tracking-wider">Smart Contracts</span>
-                    <span class="px-2.5 py-1 rounded-full bg-success/10 border border-success/20 text-success font-label-caps text-[10px] uppercase tracking-wider">DePIN / Nodes</span>
-                    <span class="px-2.5 py-1 rounded-full bg-tertiary/10 border border-tertiary/20 text-tertiary font-label-caps text-[10px] uppercase tracking-wider">Community Building</span>
-                  </div>
-                </div>
-              </div>
-              <p class="text-on-surface-variant font-body-base text-sm leading-relaxed">I'm Mehedi — a Web3 developer passionate about decentralized infrastructure and blockchain-based communities. My journey started by exploring on-chain protocols and grew into hands-on node operation, smart contract development, and building tools that make Web3 more accessible. I've worked across multiple ecosystems — from EVM chains to emerging protocols like Shelby — and I believe the future of the internet lives on open, permissionless infrastructure.</p>
-            </div>
-            <div class="flex items-center gap-2 mt-6 pt-6 border-t border-outline">
-              <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider text-[10px]">Open to collaboration</span>
-              <span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-secondary transition-colors group-hover:translate-x-1 duration-200">arrow_forward</span>
-            </div>
-          </div>
-
-          <!-- Social links -->
-          <div class="col-span-12 md:col-span-4 space-y-3">
-            <a href="https://github.com/mehedi2580" target="_blank" rel="noopener" class="flex items-center gap-4 p-5 bg-surface border border-outline rounded-xl hover:border-secondary transition-all group">
-              <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-                <span class="material-symbols-outlined text-[22px]">code</span>
-              </div>
-              <div>
-                <div class="font-body-bold text-on-surface text-sm">GitHub</div>
-                <div class="text-on-surface-variant text-xs">mehedi2580</div>
-              </div>
-              <span class="material-symbols-outlined text-[18px] text-on-surface-variant ml-auto group-hover:text-secondary group-hover:translate-x-0.5 transition-all">arrow_forward</span>
-            </a>
-            <a href="https://discord.gg/MD4gEG8B" target="_blank" rel="noopener" class="flex items-center gap-4 p-5 bg-surface border border-outline rounded-xl hover:border-secondary transition-all group">
-              <div class="w-10 h-10 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary flex-shrink-0 group-hover:bg-tertiary/20 transition-colors">
-                <span class="material-symbols-outlined text-[22px]">forum</span>
-              </div>
-              <div>
-                <div class="font-body-bold text-on-surface text-sm">Discord</div>
-                <div class="text-on-surface-variant text-xs">Join server</div>
-              </div>
-              <span class="material-symbols-outlined text-[18px] text-on-surface-variant ml-auto group-hover:text-secondary group-hover:translate-x-0.5 transition-all">arrow_forward</span>
-            </a>
-            <a href="https://x.com/0xZeroBit" target="_blank" rel="noopener" class="flex items-center gap-4 p-5 bg-surface border border-outline rounded-xl hover:border-secondary transition-all group">
-              <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0 group-hover:bg-secondary/20 transition-colors">
-                <span class="material-symbols-outlined text-[22px]">alternate_email</span>
-              </div>
-              <div>
-                <div class="font-body-bold text-on-surface text-sm">X / Twitter</div>
-                <div class="text-on-surface-variant text-xs">@0xZeroBit</div>
-              </div>
-              <span class="material-symbols-outlined text-[18px] text-on-surface-variant ml-auto group-hover:text-secondary group-hover:translate-x-0.5 transition-all">arrow_forward</span>
-            </a>
-            <a href="https://t.me/Mehedi322" target="_blank" rel="noopener" class="flex items-center gap-4 p-5 bg-surface border border-outline rounded-xl hover:border-secondary transition-all group">
-              <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center text-success flex-shrink-0 group-hover:bg-success/20 transition-colors">
-                <span class="material-symbols-outlined text-[22px]">send</span>
-              </div>
-              <div>
-                <div class="font-body-bold text-on-surface text-sm">Telegram</div>
-                <div class="text-on-surface-variant text-xs">@Mehedi322</div>
-              </div>
-              <span class="material-symbols-outlined text-[18px] text-on-surface-variant ml-auto group-hover:text-secondary group-hover:translate-x-0.5 transition-all">arrow_forward</span>
-            </a>
-          </div>
-
-          <!-- Timeline -->
-          <div class="col-span-12 md:col-span-6 bg-surface border border-outline p-6 rounded-xl">
-            <h3 class="font-headline-md text-headline-md text-on-surface mb-5">Journey</h3>
-            <div class="space-y-5">
-              <div class="flex gap-4">
-                <div class="flex flex-col items-center"><div class="w-2.5 h-2.5 rounded-full bg-primary mt-1 flex-shrink-0"></div><div class="w-px flex-1 bg-outline mt-1"></div></div>
-                <div class="pb-4"><div class="text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider mb-1">Early days</div><div class="font-body-bold text-on-surface text-sm mb-0.5">Discovered Blockchain & DeFi</div><div class="text-on-surface-variant text-xs leading-relaxed">Explored Ethereum, DeFi protocols, and on-chain mechanics. Learned Solidity and deployed first smart contracts on testnets.</div></div>
-              </div>
-              <div class="flex gap-4">
-                <div class="flex flex-col items-center"><div class="w-2.5 h-2.5 rounded-full bg-primary mt-1 flex-shrink-0"></div><div class="w-px flex-1 bg-outline mt-1"></div></div>
-                <div class="pb-4"><div class="text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider mb-1">Node operations</div><div class="font-body-bold text-on-surface text-sm mb-0.5">Running Decentralized Infrastructure</div><div class="text-on-surface-variant text-xs leading-relaxed">Expanded into validator and storage node operation across multiple protocols. Deep interest in DePIN and decentralized storage networks.</div></div>
-              </div>
-              <div class="flex gap-4">
-                <div class="flex flex-col items-center"><div class="w-2.5 h-2.5 rounded-full bg-primary mt-1 flex-shrink-0"></div><div class="w-px flex-1 bg-outline mt-1"></div></div>
-                <div class="pb-4"><div class="text-[10px] font-label-caps text-on-surface-variant uppercase tracking-wider mb-1">Community</div><div class="font-body-bold text-on-surface text-sm mb-0.5">Building Web3 Communities</div><div class="text-on-surface-variant text-xs leading-relaxed">Creating educational content, onboarding new members, and running campaigns to grow decentralized ecosystems.</div></div>
-              </div>
-              <div class="flex gap-4">
-                <div class="flex flex-col items-center"><div class="w-2.5 h-2.5 rounded-full bg-secondary mt-1 flex-shrink-0"></div></div>
-                <div><div class="text-[10px] font-label-caps text-secondary uppercase tracking-wider mb-1">Now</div><div class="font-body-bold text-on-surface text-sm mb-0.5">Building on Shelby Protocol</div><div class="text-on-surface-variant text-xs leading-relaxed">Contributing community tools, dashboards, and infrastructure for developers and node operators on Shelby.</div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Skills grid -->
-          <div class="col-span-12 md:col-span-6 bg-surface border border-outline p-6 rounded-xl">
-            <h3 class="font-headline-md text-headline-md text-on-surface mb-5">Skills & Focus</h3>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex items-center gap-3 p-3 bg-surface-bright border border-outline rounded-lg hover:border-secondary transition-colors"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">contract</span><span class="font-body-base text-sm text-on-surface">Smart Contracts</span></div>
-              <div class="flex items-center gap-3 p-3 bg-surface-bright border border-outline rounded-lg hover:border-secondary transition-colors"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">dns</span><span class="font-body-base text-sm text-on-surface">Node Operation</span></div>
-              <div class="flex items-center gap-3 p-3 bg-surface-bright border border-outline rounded-lg hover:border-secondary transition-colors"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">database</span><span class="font-body-base text-sm text-on-surface">Decentralized Storage</span></div>
-              <div class="flex items-center gap-3 p-3 bg-surface-bright border border-outline rounded-lg hover:border-secondary transition-colors"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">candlestick_chart</span><span class="font-body-base text-sm text-on-surface">DeFi & Tokenomics</span></div>
-              <div class="flex items-center gap-3 p-3 bg-surface-bright border border-outline rounded-lg hover:border-secondary transition-colors"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">groups</span><span class="font-body-base text-sm text-on-surface">Community Building</span></div>
-              <div class="flex items-center gap-3 p-3 bg-surface-bright border border-outline rounded-lg hover:border-secondary transition-colors"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">terminal</span><span class="font-body-base text-sm text-on-surface">Web3 Frontend</span></div>
-              <div class="flex items-center gap-3 p-3 bg-surface-bright border border-outline rounded-lg hover:border-secondary transition-colors"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">hub</span><span class="font-body-base text-sm text-on-surface">Cross-chain Protocols</span></div>
-              <div class="flex items-center gap-3 p-3 bg-surface-bright border border-outline rounded-lg hover:border-secondary transition-colors"><span class="material-symbols-outlined text-on-surface-variant text-[18px]">policy</span><span class="font-body-base text-sm text-on-surface">Protocol Research</span></div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-    </div><!-- /page content -->
-  </main>
+    <div class="status-box">
+      <p class="status-box-title">Open to collaboration</p>
+      <p class="status-box-text">Interested in working together on Web3 infrastructure, node tooling, protocol dashboards, or community initiatives? Reach out on any of the platforms above.</p>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
