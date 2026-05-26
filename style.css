@@ -610,3 +610,17 @@ canvas, .bar-fill, .node-card-clickable { transition: none !important; }
   .alert-select { width: 100%; }
   .upload-result-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== APT PRICE LIVE BADGE ===== */
+.apt-price-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--green-light); color: var(--green-text);
+  font-size: 10px; font-weight: 500;
+  padding: 2px 7px; border-radius: 99px;
+  white-space: nowrap;
+}
+.apt-price-dot {
+  display: inline-block; width: 5px; height: 5px;
+  border-radius: 50%; background: var(--green);
+  animation: pulse 1.5s infinite;
+}

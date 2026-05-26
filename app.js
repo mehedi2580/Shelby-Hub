@@ -93,6 +93,11 @@ function isDark() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
+// ── APT Price ─────────────────────────────────────────────────
+let _aptPrice      = null;   // last fetched price (number)
+let _aptPricedAt   = null;   // timestamp of last successful fetch
+let _aptFetchTimer = null;   // interval handle
+
 // ── Alerts / Watchlist ────────────────────────────────────────
 let _alerts = []; // [{ id, metric, operator, threshold, label, triggered, lastNotified }]
 let _alertsEnabled = false; // true once Notification permission granted
@@ -815,6 +820,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (btn && addrEl) { addrEl.textContent = shortAddr(saved); btn.style.display = 'flex'; }
     }
   } catch (_) {}
+
+  fetchAptPrice();
+  // Refresh APT price every 60 seconds
+  _aptFetchTimer = setInterval(fetchAptPrice, 60_000);
 
   refreshTracker();
 
@@ -1609,4 +1618,112 @@ async function submitUpload2() {
         <div><strong>Chunks:</strong> ${result.chunks} · erasure ${result.erasureFactor} · ${result.spCount} SP nodes</div>
       </div>
     </div>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// APT PRICE LIVE FEED (CoinGecko)
+// ════════════════════════════════════════════════════════════════
+
+async function fetchAptPrice() {
+  // CoinGecko free endpoint — no API key needed, rate limit 30 req/min
+  const url = 'https://api.coingecko.com/api/v3/simple/price?ids=aptos&vs_currencies=usd&include_24hr_change=true';
+
+  try {
+    const r = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const json = await r.json();
+
+    const price  = json?.aptos?.usd;
+    const change = json?.aptos?.usd_24h_change;
+    if (!price || typeof price !== 'number') throw new Error('No price in response');
+
+    _aptPrice    = price;
+    _aptPricedAt = Date.now();
+    applyAptPrice(price, change);
+  } catch (err) {
+    // On failure mark stale if we had a previous price, else leave default
+    console.warn('[APT price]', err.message);
+    markAptPriceStale();
+  }
+}
+
+function applyAptPrice(price, change24h) {
+  const slider  = document.getElementById('apt-price');
+  const display = document.getElementById('apt-price-out');
+  const badge   = document.getElementById('apt-price-badge');
+  const stale   = document.getElementById('apt-price-stale');
+  const meta    = document.getElementById('apt-price-meta');
+  const changeEl = document.getElementById('apt-price-change');
+  const updatedEl = document.getElementById('apt-price-updated');
+
+  if (!slider) return;
+
+  // Expand slider range if live price exceeds current max
+  const currentMax = parseFloat(slider.max);
+  if (price > currentMax) {
+    // Round up to next clean ceiling
+    slider.max = Math.ceil(price / 10) * 10 + 20;
+  }
+
+  // Snap to 0.5-step precision
+  const snapped = Math.round(price * 2) / 2;
+  slider.value  = snapped;
+  if (display) display.textContent = '$' + snapped.toFixed(2);
+
+  // Show live badge, hide stale
+  if (badge)  badge.style.display  = 'inline-flex';
+  if (stale)  stale.style.display  = 'none';
+  if (meta)   meta.style.display   = '';
+
+  // 24h change colouring
+  if (changeEl && change24h !== undefined) {
+    const sign  = change24h >= 0 ? '+' : '';
+    changeEl.textContent  = sign + change24h.toFixed(2) + '%';
+    changeEl.style.color  = change24h >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  // "Updated X ago" — refreshed by a small clock tick
+  if (updatedEl) {
+    updatedEl.textContent = 'just now';
+    startAptPriceClock(updatedEl);
+  }
+
+  // Recalculate ROI with new price if calculator is visible
+  if (document.getElementById('page-calculator').classList.contains('active')) {
+    calcROI();
+  }
+}
+
+function markAptPriceStale() {
+  const badge = document.getElementById('apt-price-badge');
+  const stale = document.getElementById('apt-price-stale');
+  if (badge && _aptPrice) {
+    badge.style.display = 'none';
+    if (stale) stale.style.display = '';
+  }
+}
+
+// ── Small clock that updates "Updated X ago" every 30s ───────
+let _aptClockTimer = null;
+function startAptPriceClock(el) {
+  if (_aptClockTimer) clearInterval(_aptClockTimer);
+  _aptClockTimer = setInterval(() => {
+    if (!_aptPricedAt || !el) return;
+    const secs = Math.round((Date.now() - _aptPricedAt) / 1000);
+    el.textContent = secs < 60 ? secs + 's ago'
+      : Math.floor(secs / 60) + 'm ago';
+    // Mark stale after 3 minutes with no update
+    if (secs > 180) markAptPriceStale();
+  }, 30_000);
+}
+
+// ── Re-fetch when calculator tab is opened while price is stale ──
+// Wrap showPage: if navigating to calculator and price is >90s old, refresh
+const _showPageBase = showPage;
+function showPage(id, btn) {
+  _showPageBase(id, btn);
+  if (id === 'calculator') {
+    const age = _aptPricedAt ? (Date.now() - _aptPricedAt) / 1000 : Infinity;
+    if (age > 90) fetchAptPrice();
+  }
 }
