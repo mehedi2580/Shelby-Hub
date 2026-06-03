@@ -9,13 +9,13 @@
   --border-light: #EEF0F3;
   --text-primary: #0F1117;
   --text-secondary: #5A6070;
-  --text-tertiary: #9AA0AE;
+  --text-tertiary: #666D7A;
   --accent: #185FA5;
   --accent-light: #E6F1FB;
   --green: #1D9E75;
   --green-light: #EAF3DE;
   --green-text: #3B6D11;
-  --yellow: #BA7517;
+  --yellow: #8B5A0A;
   --yellow-light: #FEF3D7;
   --red: #A32D2D;
   --red-light: #FBE9E9;
@@ -39,10 +39,12 @@
     --border-light: #232838;
     --text-primary: #E8EAF0;
     --text-secondary: #8A90A0;
-    --text-tertiary: #555B6E;
+    --text-tertiary: #9098AA;
     --accent-light: #0D2A4A;
     --green-light: #0E2A18;
     --green-text: #5AB87A;
+    --yellow: #D4861E;
+    --red: #F05050;
     --yellow-light: #2A1E06;
     --red-light: #2A0E0E;
     --purple-light: #1A1840;
@@ -58,10 +60,12 @@
   --border-light: #232838;
   --text-primary: #E8EAF0;
   --text-secondary: #8A90A0;
-  --text-tertiary: #555B6E;
+  --text-tertiary: #9098AA;
   --accent-light: #0D2A4A;
   --green-light: #0E2A18;
   --green-text: #5AB87A;
+  --yellow: #D4861E;
+  --red: #F05050;
   --yellow-light: #2A1E06;
   --red-light: #2A0E0E;
   --purple-light: #1A1840;
@@ -605,4 +609,18 @@ canvas, .bar-fill, .node-card-clickable { transition: none !important; }
   .alert-add-row { flex-direction: column; align-items: stretch; }
   .alert-select { width: 100%; }
   .upload-result-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== APT PRICE LIVE BADGE ===== */
+.apt-price-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--green-light); color: var(--green-text);
+  font-size: 10px; font-weight: 500;
+  padding: 2px 7px; border-radius: 99px;
+  white-space: nowrap;
+}
+.apt-price-dot {
+  display: inline-block; width: 5px; height: 5px;
+  border-radius: 50%; background: var(--green);
+  animation: pulse 1.5s infinite;
 }
