@@ -152,8 +152,21 @@
             <div class="roi-input-row"><input type="range" min="100" max="50000" value="5000" step="100" id="stake" oninput="calcROI()"><span class="roi-val" id="stake-out">5,000 APT</span></div>
           </div>
           <div class="roi-row">
-            <span class="roi-label">APT price (USD)</span>
-            <div class="roi-input-row"><input type="range" min="1" max="50" value="8" step="1" id="apt-price" oninput="calcROI()"><span class="roi-val" id="apt-price-out">$8</span></div>
+            <span class="roi-label" style="display:flex;align-items:center;gap:6px">
+              APT price (USD)
+              <span id="apt-price-badge" class="apt-price-badge" style="display:none">
+                <span class="apt-price-dot"></span><span id="apt-price-badge-text">Live</span>
+              </span>
+              <span id="apt-price-stale" style="display:none;font-size:10px;color:var(--yellow)">⚠ stale</span>
+            </span>
+            <div class="roi-input-row">
+              <input type="range" min="1" max="100" value="8" step="0.5" id="apt-price" oninput="calcROI()">
+              <span class="roi-val" id="apt-price-out">$8</span>
+            </div>
+            <div id="apt-price-meta" style="font-size:11px;color:var(--text-tertiary);margin-top:2px;display:none">
+              24h: <span id="apt-price-change" style="font-weight:500"></span> &nbsp;·&nbsp;
+              Updated <span id="apt-price-updated"></span>
+            </div>
           </div>
           <div class="roi-row">
             <span class="roi-label">Utilisation rate (%)</span>
