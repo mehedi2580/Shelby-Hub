@@ -27,13 +27,6 @@
       <button class="wallet-nav-btn" id="walletNavBtn" onclick="showPage('wallet', this); loadWalletPage()" style="display:none">
         <span class="wallet-nav-addr" id="walletNavAddr"></span>
       </button>
-      <button class="refresh-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle theme" style="padding:7px 10px;border-radius:var(--radius-md)">
-        <i class="ti ti-moon" aria-hidden="true"></i>
-      </button>
-      <button class="refresh-btn" onclick="openAlertsModal()" title="Alerts &amp; watchlist" style="padding:7px 10px;border-radius:var(--radius-md);position:relative">
-        <i class="ti ti-bell" aria-hidden="true"></i>
-        <span id="alertNavBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:600;border-radius:99px;width:16px;height:16px;align-items:center;justify-content:center">0</span>
-      </button>
       <button class="hamburger" onclick="toggleDrawer()" aria-label="Toggle navigation menu">
         <span></span><span></span><span></span>
       </button>
@@ -56,9 +49,6 @@
         <button class="nav-item" id="walletNavItem" onclick="showPage('wallet', this); loadWalletPage()">
           <i class="ti ti-wallet" aria-hidden="true"></i> My wallet
         </button>
-        <button class="nav-item" onclick="showPage('upload', this)">
-          <i class="ti ti-cloud-upload" aria-hidden="true"></i> Blob upload demo
-        </button>
         <div class="nav-divider"></div>
         <button class="nav-item" onclick="showPage('developer', this)">
           <i class="ti ti-user-circle" aria-hidden="true"></i> About developer
@@ -79,9 +69,6 @@
         <a class="refresh-btn" href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="text-decoration:none">
           <i class="ti ti-radar" aria-hidden="true"></i> Explorer
         </a>
-        <button class="refresh-btn" onclick="showPage('upload', document.querySelector('.nav-item[onclick*=upload]'))">
-          <i class="ti ti-cloud-upload" aria-hidden="true"></i> Upload blob
-        </button>
         <button class="refresh-btn" onclick="refreshTracker()">
           <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
         </button>
@@ -152,21 +139,8 @@
             <div class="roi-input-row"><input type="range" min="100" max="50000" value="5000" step="100" id="stake" oninput="calcROI()"><span class="roi-val" id="stake-out">5,000 APT</span></div>
           </div>
           <div class="roi-row">
-            <span class="roi-label" style="display:flex;align-items:center;gap:6px">
-              APT price (USD)
-              <span id="apt-price-badge" class="apt-price-badge" style="display:none">
-                <span class="apt-price-dot"></span><span id="apt-price-badge-text">Live</span>
-              </span>
-              <span id="apt-price-stale" style="display:none;font-size:10px;color:var(--yellow)">⚠ stale</span>
-            </span>
-            <div class="roi-input-row">
-              <input type="range" min="1" max="100" value="8" step="0.5" id="apt-price" oninput="calcROI()">
-              <span class="roi-val" id="apt-price-out">$8</span>
-            </div>
-            <div id="apt-price-meta" style="font-size:11px;color:var(--text-tertiary);margin-top:2px;display:none">
-              24h: <span id="apt-price-change" style="font-weight:500"></span> &nbsp;·&nbsp;
-              Updated <span id="apt-price-updated"></span>
-            </div>
+            <span class="roi-label">APT price (USD)</span>
+            <div class="roi-input-row"><input type="range" min="1" max="50" value="8" step="1" id="apt-price" oninput="calcROI()"><span class="roi-val" id="apt-price-out">$8</span></div>
           </div>
           <div class="roi-row">
             <span class="roi-label">Utilisation rate (%)</span>
@@ -511,177 +485,7 @@
     </div>
   </div>
 
-  <!-- BLOB UPLOAD PAGE -->
-  <div id="page-upload" class="page">
-    <div class="top-row">
-      <div class="top-row-left">
-        <span class="page-title">Blob upload demo</span>
-        <span class="badge badge-blue">Testnet</span>
-      </div>
-    </div>
-    <div class="info-hero" style="margin-bottom:1.25rem">
-      <div class="info-hero-title">Upload a file to Shelby testnet</div>
-      <div class="info-hero-sub">See how Shelby stores data on-chain — your file gets erasure-coded with Clay, distributed across SP nodes, and registered as a blob on Aptos testnet. No wallet required for this demo.</div>
-    </div>
-    <div class="two-col" style="margin-bottom:1.25rem;align-items:start">
-      <div>
-        <p class="section-hd">Upload a file</p>
-        <div class="card">
-          <div id="upload-panel">
-            <div class="dropzone" id="dropzone"
-                 onclick="onDropzoneClick()"
-                 ondragover="onDropzoneDragOver(event)"
-                 ondragleave="onDropzoneDragLeave()"
-                 ondrop="onDropzoneDrop(event)"
-                 role="button" tabindex="0" aria-label="File upload zone"
-                 onkeydown="if(event.key==='Enter'||event.key===' ')onDropzoneClick()">
-              <div id="dropzone-label" style="pointer-events:none;text-align:center;font-size:13px;color:var(--text-secondary)">
-                <i class="ti ti-cloud-upload" style="font-size:28px;margin-bottom:8px;display:block;color:var(--text-tertiary)" aria-hidden="true"></i>
-                Drag &amp; drop a file here<br>
-                <span style="font-size:11px;color:var(--text-tertiary)">or click to browse · max 10 MB</span>
-              </div>
-            </div>
-            <input type="file" id="file-input-hidden" style="display:none" onchange="onFileInputChange(event)" />
-            <button class="wallet-connect-btn wallet-connect-btn-blue" id="upload-submit-btn"
-                    onclick="submitUpload()" disabled style="margin-top:12px;width:100%">
-              <i class="ti ti-send" aria-hidden="true"></i> Store on Shelby testnet
-            </button>
-          </div>
-
-          <div id="upload-progress-panel" style="display:none;padding:8px 0">
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
-              <span id="upload-progress-label" style="color:var(--text-secondary)">Preparing…</span>
-              <span id="upload-progress-pct" style="color:var(--text-primary);font-weight:500">0%</span>
-            </div>
-            <div style="height:6px;background:var(--bg-secondary);border-radius:99px;overflow:hidden;margin-bottom:12px">
-              <div id="upload-progress-bar" style="height:100%;width:0%;background:var(--accent);border-radius:99px;transition:width 0.4s ease"></div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-secondary)">
-              <div style="display:flex;align-items:center;gap:6px"><i class="ti ti-check" style="color:var(--green)" aria-hidden="true"></i> Clay erasure encoding (10+4)</div>
-              <div style="display:flex;align-items:center;gap:6px"><i class="ti ti-check" style="color:var(--green)" aria-hidden="true"></i> Chunk distribution to SP nodes</div>
-              <div style="display:flex;align-items:center;gap:6px"><i class="ti ti-loader" style="color:var(--accent)" aria-hidden="true"></i> Aptos on-chain registration</div>
-            </div>
-          </div>
-
-          <div id="upload-result-panel" style="display:none">
-            <div id="upload-result-content"></div>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <p class="section-hd">How it works</p>
-        <div class="arch-row" style="margin-bottom:0">
-          <div class="arch-item">
-            <div class="arch-num">1</div>
-            <div><div class="arch-title">Erasure coding</div><div class="arch-desc">Your file is split using Clay codes (10 data + 4 parity chunks), ensuring it can survive multiple SP node failures.</div></div>
-          </div>
-          <div class="arch-item">
-            <div class="arch-num">2</div>
-            <div><div class="arch-title">Chunk distribution</div><div class="arch-desc">Chunks are distributed across Shelby's private fiber mesh to geographically dispersed SP nodes via the RPC gateway.</div></div>
-          </div>
-          <div class="arch-item">
-            <div class="arch-num">3</div>
-            <div><div class="arch-title">On-chain registration</div><div class="arch-desc">A blob ID and Merkle root are committed to Aptos testnet. Anyone can verify data integrity against this commitment.</div></div>
-          </div>
-          <div class="arch-item">
-            <div class="arch-num">4</div>
-            <div><div class="arch-title">Sub-second reads</div><div class="arch-desc">Once stored, any client can fetch your file using the blob ID. Reads are served in under a second from the nearest SP node.</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <p class="footnote"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Testnet only — data is not guaranteed to persist. Do not upload sensitive files.</p>
-  </div>
-
-  <!-- ALERTS MODAL -->
-  <div id="alerts-modal-backdrop" class="node-modal-backdrop" onclick="closeAlertsModal(event)" style="display:none" aria-modal="true" role="dialog" aria-label="Alerts and watchlist">
-    <div class="node-modal" style="max-width:520px">
-      <div class="node-modal-header">
-        <div>
-          <div class="node-modal-title"><i class="ti ti-bell" style="margin-right:6px" aria-hidden="true"></i>Alerts &amp; watchlist</div>
-          <div class="node-modal-sub">Get browser notifications when thresholds are crossed</div>
-        </div>
-        <button class="node-modal-close" onclick="closeAlertsModal()" aria-label="Close alerts">
-          <i class="ti ti-x" aria-hidden="true"></i>
-        </button>
-      </div>
-
-      <div style="padding:16px 18px;border-bottom:1px solid var(--border)">
-        <p class="section-hd" style="margin-bottom:10px">Add alert</p>
-        <div class="alert-add-row">
-          <select id="alert-metric" class="alert-select" onchange="onAlertMetricChange()">
-            <option value="onlineNodes">Online nodes</option>
-            <option value="totalBlobs">Total blobs</option>
-          </select>
-          <select id="alert-operator" class="alert-select">
-            <option value="&lt;">&lt;</option>
-            <option value="&lt;=">&lt;=</option>
-            <option value="&gt;">&gt;</option>
-            <option value="&gt;=">&gt;=</option>
-          </select>
-          <input type="number" id="alert-threshold" class="wallet-input" placeholder="12" style="width:80px;flex-shrink:0" />
-          <button class="wallet-connect-btn wallet-connect-btn-blue" onclick="addAlert()" style="white-space:nowrap;flex-shrink:0">
-            <i class="ti ti-bell-plus" aria-hidden="true"></i> Add
-          </button>
-        </div>
-      </div>
-
-      <div id="alerts-list" style="padding:16px 18px;min-height:80px;max-height:320px;overflow-y:auto"></div>
-
-      <div style="padding:12px 18px;border-top:1px solid var(--border)">
-        <p class="footnote"><i class="ti ti-info-circle" aria-hidden="true"></i> Alerts fire at most once per 5 minutes. Data checks every 10 seconds.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- UPLOAD MODAL (quick-access from tracker) -->
-  <div id="upload-modal-backdrop" class="node-modal-backdrop" onclick="closeUploadModal(event)" style="display:none" aria-modal="true" role="dialog" aria-label="Upload blob">
-    <div class="node-modal" style="max-width:520px">
-      <div class="node-modal-header">
-        <div>
-          <div class="node-modal-title"><i class="ti ti-cloud-upload" style="margin-right:6px" aria-hidden="true"></i>Upload blob to Shelby testnet</div>
-          <div class="node-modal-sub">Drag &amp; drop or click to select — max 10 MB</div>
-        </div>
-        <button class="node-modal-close" onclick="closeUploadModal()" aria-label="Close upload">
-          <i class="ti ti-x" aria-hidden="true"></i>
-        </button>
-      </div>
-      <div style="padding:18px">
-        <div class="dropzone" id="dropzone-modal"
-             onclick="document.getElementById('file-input-modal').click()"
-             ondragover="onDropzoneDragOver2(event)"
-             ondragleave="onDropzoneDragLeave2()"
-             ondrop="onDropzoneDrop2(event)"
-             role="button" tabindex="0" aria-label="File upload zone">
-          <div id="dropzone-modal-label" style="pointer-events:none;text-align:center;font-size:13px;color:var(--text-secondary)">
-            <i class="ti ti-cloud-upload" style="font-size:28px;margin-bottom:8px;display:block;color:var(--text-tertiary)" aria-hidden="true"></i>
-            Drag &amp; drop a file here<br>
-            <span style="font-size:11px;color:var(--text-tertiary)">or click to browse · max 10 MB</span>
-          </div>
-        </div>
-        <input type="file" id="file-input-modal" style="display:none" onchange="onFileInputChange2(event)" />
-        <button class="wallet-connect-btn wallet-connect-btn-blue" id="upload-modal-submit-btn"
-                onclick="submitUpload2()" disabled style="margin-top:12px;width:100%">
-          <i class="ti ti-send" aria-hidden="true"></i> Store on Shelby testnet
-        </button>
-        <div id="upload-modal-progress" style="display:none;margin-top:12px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px">
-            <span id="upload-modal-label" style="color:var(--text-secondary)">Preparing…</span>
-            <span id="upload-modal-pct" style="color:var(--text-primary);font-weight:500">0%</span>
-          </div>
-          <div style="height:6px;background:var(--bg-secondary);border-radius:99px;overflow:hidden">
-            <div id="upload-modal-bar" style="height:100%;width:0%;background:var(--accent);border-radius:99px;transition:width 0.4s ease"></div>
-          </div>
-        </div>
-        <div id="upload-modal-result" style="display:none"></div>
-        <p class="footnote" style="margin-top:10px"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Testnet only. Do not upload sensitive files.</p>
-      </div>
-    </div>
-  </div>
-
   <!-- NODE DETAIL MODAL -->
-
   <div id="node-modal-backdrop" class="node-modal-backdrop" onclick="closeNodeModal(event)" aria-modal="true" role="dialog" aria-labelledby="nodeModalTitle" style="display:none">
     <div class="node-modal" id="nodeModalPanel">
       <div class="node-modal-header">
