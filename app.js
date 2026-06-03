@@ -54,6 +54,62 @@ function isValidAptosAddr(addr) {
 // ── State: real vs simulated ──────────────────────────────────
 let isLive = false;
 
+// ── Theme ─────────────────────────────────────────────────────
+let _themeOverride = null; // 'dark' | 'light' | null (system)
+
+function initTheme() {
+  try { _themeOverride = localStorage.getItem('shelby_theme'); } catch (_) {}
+  applyTheme();
+}
+
+function applyTheme() {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = _themeOverride === 'dark' || (_themeOverride === null && prefersDark);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) {
+    btn.innerHTML = dark
+      ? '<i class="ti ti-sun" aria-hidden="true"></i>'
+      : '<i class="ti ti-moon" aria-hidden="true"></i>';
+    btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  }
+}
+
+function toggleTheme() {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const currentlyDark = _themeOverride === 'dark' || (_themeOverride === null && prefersDark);
+  _themeOverride = currentlyDark ? 'light' : 'dark';
+  try { localStorage.setItem('shelby_theme', _themeOverride); } catch (_) {}
+  applyTheme();
+  // Redraw charts so colors update
+  if (document.getElementById('page-tracker').classList.contains('active')) {
+    refreshTracker();
+  }
+}
+
+// Override isDark() to respect manual override
+function isDark() {
+  if (_themeOverride) return _themeOverride === 'dark';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+// ── Alerts / Watchlist ────────────────────────────────────────
+let _alerts = []; // [{ id, metric, operator, threshold, label, triggered, lastNotified }]
+let _alertsEnabled = false; // true once Notification permission granted
+
+function loadAlerts() {
+  try {
+    const saved = localStorage.getItem('shelby_alerts');
+    if (saved) _alerts = JSON.parse(saved);
+  } catch (_) { _alerts = []; }
+}
+
+function saveAlerts() {
+  try { localStorage.setItem('shelby_alerts', JSON.stringify(_alerts)); } catch (_) {}
+}
+
+function alertId() { return 'al_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
+
 async function tryFetch(url) {
   try {
     const r = await fetch(url);
@@ -327,6 +383,11 @@ async function refreshTracker() {
   renderNodes(nodeData);
   renderUtil();
   renderFeed(recentTxns);
+
+  // Check alert thresholds after every refresh
+  const onlineCount = (nodeData || FALLBACK_NODES).filter(n => n.status === 'online').length;
+  const totalBlobsNow = networkData?.totalBlobs || 0;
+  checkAlerts({ onlineNodes: onlineCount, totalBlobs: totalBlobsNow });
 
   const note = document.getElementById('tracker-note');
   if (note) {
@@ -734,6 +795,9 @@ function renderWalletStats(data, live) {
 
 // ── Init ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  loadAlerts();
+
   const footnote = document.querySelector('#page-tracker .footnote');
   if (footnote) footnote.id = 'tracker-note';
 
@@ -1025,4 +1089,524 @@ function renderNodeModal(data, node, live) {
   document.getElementById('nodeModalNoteText').textContent = live
     ? `✅ Live on-chain data — last updated ${new Date().toLocaleTimeString()}`
     : '⚠️ Simulated data — run npm start to connect live node data';
+}
+
+// ════════════════════════════════════════════════════════════════
+// ALERT / WATCHLIST
+// ════════════════════════════════════════════════════════════════
+
+const ALERT_METRICS = [
+  { key: 'onlineNodes', label: 'Online nodes',  unit: '',      operators: ['<', '<=', '>', '>='] },
+  { key: 'totalBlobs',  label: 'Total blobs',   unit: '',      operators: ['>', '>=', '<', '<='] },
+];
+
+// ── Open / close alerts modal ─────────────────────────────────
+function openAlertsModal() {
+  document.getElementById('alerts-modal-backdrop').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  renderAlertsList();
+}
+function closeAlertsModal(event) {
+  if (event && event.target !== document.getElementById('alerts-modal-backdrop')) return;
+  document.getElementById('alerts-modal-backdrop').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeAlertsModal({ target: document.getElementById('alerts-modal-backdrop') });
+    closeUploadModal({ target: document.getElementById('upload-modal-backdrop') });
+  }
+});
+
+// ── Request browser notification permission ───────────────────
+async function requestNotifyPermission() {
+  if (!('Notification' in window)) {
+    alert('Your browser does not support desktop notifications.');
+    return false;
+  }
+  if (Notification.permission === 'granted') { _alertsEnabled = true; return true; }
+  if (Notification.permission === 'denied')  {
+    alert('Notifications are blocked. Enable them in your browser settings for this site.');
+    return false;
+  }
+  const perm = await Notification.requestPermission();
+  _alertsEnabled = perm === 'granted';
+  return _alertsEnabled;
+}
+
+// ── Add a new alert ───────────────────────────────────────────
+async function addAlert() {
+  const metric    = document.getElementById('alert-metric').value;
+  const operator  = document.getElementById('alert-operator').value;
+  const threshold = parseFloat(document.getElementById('alert-threshold').value);
+  if (isNaN(threshold)) { document.getElementById('alert-threshold').focus(); return; }
+
+  const granted = await requestNotifyPermission();
+  if (!granted) return;
+
+  const metaDef = ALERT_METRICS.find(m => m.key === metric);
+  const alert = {
+    id:          alertId(),
+    metric,
+    operator,
+    threshold,
+    label:       metaDef?.label || metric,
+    triggered:   false,
+    lastNotified: null,
+    createdAt:   new Date().toISOString(),
+  };
+  _alerts.push(alert);
+  saveAlerts();
+  renderAlertsList();
+  updateAlertBadge();
+  document.getElementById('alert-threshold').value = '';
+}
+
+// ── Delete an alert ───────────────────────────────────────────
+function deleteAlert(id) {
+  _alerts = _alerts.filter(a => a.id !== id);
+  saveAlerts();
+  renderAlertsList();
+  updateAlertBadge();
+}
+
+// ── Check all alerts against current values ───────────────────
+function checkAlerts(values) {
+  if (!_alertsEnabled && Notification.permission !== 'granted') return;
+  const now = Date.now();
+  _alerts.forEach(alert => {
+    const val = values[alert.metric];
+    if (val === undefined || val === null) return;
+    const t = alert.threshold;
+    let breached = false;
+    if (alert.operator === '<')  breached = val < t;
+    if (alert.operator === '<=') breached = val <= t;
+    if (alert.operator === '>')  breached = val > t;
+    if (alert.operator === '>=') breached = val >= t;
+
+    // Fire notification at most once per 5 minutes per alert
+    if (breached && (!alert.lastNotified || now - alert.lastNotified > 5 * 60 * 1000)) {
+      alert.triggered   = true;
+      alert.lastNotified = now;
+      saveAlerts();
+      fireNotification(alert, val);
+      updateAlertBadge();
+    } else if (!breached && alert.triggered) {
+      alert.triggered = false;
+      saveAlerts();
+      updateAlertBadge();
+    }
+  });
+}
+
+function fireNotification(alert, currentVal) {
+  if (Notification.permission !== 'granted') return;
+  const title = `⚠️ Shelby Hub Alert`;
+  const body  = `${alert.label} is ${currentVal} (threshold: ${alert.operator} ${alert.threshold})`;
+  const n = new Notification(title, { body, icon: 'https://avatars.githubusercontent.com/u/219037914?s=64&v=4' });
+  n.onclick = () => { window.focus(); n.close(); };
+  setTimeout(() => n.close(), 8000);
+}
+
+// ── Update the alert badge count on the nav button ────────────
+function updateAlertBadge() {
+  const triggered = _alerts.filter(a => a.triggered).length;
+  const badge = document.getElementById('alertNavBadge');
+  if (!badge) return;
+  if (triggered > 0) {
+    badge.textContent = triggered;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ── Render the alerts list inside the modal ───────────────────
+function renderAlertsList() {
+  const container = document.getElementById('alerts-list');
+  if (!container) return;
+
+  const permStatus = !('Notification' in window) ? 'unsupported'
+    : Notification.permission === 'granted' ? 'granted'
+    : Notification.permission === 'denied'  ? 'denied'
+    : 'default';
+
+  const permBanner = permStatus !== 'granted' ? `
+    <div class="alert-perm-banner">
+      <i class="ti ti-bell-off" aria-hidden="true"></i>
+      ${permStatus === 'denied'
+        ? 'Notifications blocked — enable them in browser settings.'
+        : permStatus === 'unsupported'
+        ? 'Your browser does not support notifications.'
+        : 'Click "Add alert" to enable browser notifications.'}
+    </div>` : '';
+
+  if (_alerts.length === 0) {
+    container.innerHTML = permBanner + `
+      <div style="text-align:center;padding:32px 0;color:var(--text-secondary);font-size:13px">
+        <i class="ti ti-bell-off" style="font-size:28px;display:block;margin-bottom:8px;color:var(--text-tertiary)" aria-hidden="true"></i>
+        No alerts set. Add one below.
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = permBanner + _alerts.map(a => `
+    <div class="alert-item ${a.triggered ? 'alert-item-triggered' : ''}">
+      <div style="flex:1;min-width:0">
+        <div class="alert-item-label">
+          ${a.triggered ? '<span class="alert-firing-dot"></span>' : ''}
+          ${a.label} ${a.operator} ${a.threshold.toLocaleString()}
+        </div>
+        <div class="alert-item-meta">
+          ${a.triggered ? '🔴 Currently firing' : '✅ OK'}
+          · created ${new Date(a.createdAt).toLocaleDateString()}
+          ${a.lastNotified ? `· last fired ${secsAgo(Math.round((Date.now() - a.lastNotified) / 1000))}` : ''}
+        </div>
+      </div>
+      <button class="alert-delete-btn" onclick="deleteAlert('${a.id}')" aria-label="Delete alert">
+        <i class="ti ti-trash" aria-hidden="true"></i>
+      </button>
+    </div>`).join('');
+}
+
+// ── Populate operator dropdown when metric changes ────────────
+function onAlertMetricChange() {
+  const metric  = document.getElementById('alert-metric').value;
+  const metaDef = ALERT_METRICS.find(m => m.key === metric);
+  const opSel   = document.getElementById('alert-operator');
+  if (!metaDef || !opSel) return;
+  opSel.innerHTML = metaDef.operators.map(op => `<option value="${op}">${op}</option>`).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// BLOB UPLOAD DEMO
+// ════════════════════════════════════════════════════════════════
+
+let _uploadFile = null;
+let _uploadChart = null;
+
+function openUploadModal() {
+  document.getElementById('upload-modal-backdrop').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  resetUploadState();
+}
+function closeUploadModal(event) {
+  if (event && event.target !== document.getElementById('upload-modal-backdrop')) return;
+  document.getElementById('upload-modal-backdrop').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function resetUploadState() {
+  _uploadFile = null;
+  const zone = document.getElementById('dropzone');
+  if (zone) zone.classList.remove('dropzone-active', 'dropzone-has-file');
+  const label = document.getElementById('dropzone-label');
+  if (label) label.innerHTML = `<i class="ti ti-cloud-upload" style="font-size:28px;margin-bottom:8px;color:var(--text-tertiary)" aria-hidden="true"></i><br>Drag & drop a file here<br><span style="font-size:11px;color:var(--text-tertiary)">or click to browse · max 10 MB</span>`;
+  document.getElementById('upload-panel').style.display = '';
+  document.getElementById('upload-progress-panel').style.display = 'none';
+  document.getElementById('upload-result-panel').style.display = 'none';
+  document.getElementById('upload-submit-btn').disabled = true;
+}
+
+// ── Drag-and-drop handlers ────────────────────────────────────
+function onDropzoneDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.add('dropzone-active');
+}
+function onDropzoneDragLeave() {
+  document.getElementById('dropzone').classList.remove('dropzone-active');
+}
+function onDropzoneDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('dropzone-active');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) setUploadFile(file);
+}
+function onDropzoneClick() {
+  document.getElementById('file-input-hidden').click();
+}
+function onFileInputChange(e) {
+  const file = e.target.files?.[0];
+  if (file) setUploadFile(file);
+  e.target.value = ''; // reset so same file can be re-selected
+}
+function setUploadFile(file) {
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File is too large. Maximum size is 10 MB for the testnet demo.');
+    return;
+  }
+  _uploadFile = file;
+  const zone  = document.getElementById('dropzone');
+  zone.classList.add('dropzone-has-file');
+  zone.classList.remove('dropzone-active');
+  const label = document.getElementById('dropzone-label');
+  label.innerHTML = `
+    <i class="ti ti-file-check" style="font-size:28px;margin-bottom:8px;color:var(--green)" aria-hidden="true"></i><br>
+    <strong style="color:var(--text-primary)">${file.name}</strong><br>
+    <span style="font-size:11px;color:var(--text-secondary)">${fmtBytes(file.size)} · ${file.type || 'unknown type'}</span>`;
+  document.getElementById('upload-submit-btn').disabled = false;
+}
+
+// ── Submit upload ─────────────────────────────────────────────
+async function submitUpload() {
+  if (!_uploadFile) return;
+
+  document.getElementById('upload-panel').style.display = 'none';
+  document.getElementById('upload-progress-panel').style.display = '';
+  document.getElementById('upload-result-panel').style.display = 'none';
+
+  // Animated progress steps
+  const steps = [
+    { pct: 10, label: 'Reading file…' },
+    { pct: 25, label: 'Connecting to Shelby RPC…' },
+    { pct: 45, label: 'Applying Clay erasure coding…' },
+    { pct: 65, label: 'Distributing chunks to SP nodes…' },
+    { pct: 80, label: 'Waiting for on-chain confirmation…' },
+    { pct: 95, label: 'Finalising blob registration…' },
+  ];
+
+  const setProgress = (pct, label) => {
+    const bar = document.getElementById('upload-progress-bar');
+    const lbl = document.getElementById('upload-progress-label');
+    const pctEl = document.getElementById('upload-progress-pct');
+    if (bar) bar.style.width = pct + '%';
+    if (lbl) lbl.textContent = label;
+    if (pctEl) pctEl.textContent = pct + '%';
+  };
+
+  setProgress(0, 'Preparing…');
+
+  // Read file as base64
+  let fileData = null;
+  try {
+    fileData = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload  = () => resolve(r.result.split(',')[1]);
+      r.onerror = () => reject(new Error('File read failed'));
+      r.readAsDataURL(_uploadFile);
+    });
+  } catch (err) {
+    showUploadError('Could not read file: ' + err.message);
+    return;
+  }
+
+  // Animate through steps while API call runs
+  let stepIdx = 0;
+  const stepTimer = setInterval(() => {
+    if (stepIdx < steps.length) {
+      setProgress(steps[stepIdx].pct, steps[stepIdx].label);
+      stepIdx++;
+    }
+  }, 600);
+
+  // Try real API upload, with simulated fallback
+  let result = null;
+  let live    = false;
+
+  const health = await tryFetch(`${API}/health`);
+  if (health?.ok) {
+    try {
+      const resp = await fetch(`${API}/upload`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName:    _uploadFile.name,
+          fileType:    _uploadFile.type || 'application/octet-stream',
+          fileSizeBytes: _uploadFile.size,
+          data:        fileData,
+        }),
+      });
+      const json = await resp.json();
+      if (json.ok) { result = json.data; live = true; }
+    } catch (_) {}
+  }
+
+  clearInterval(stepTimer);
+  setProgress(100, 'Done!');
+  await new Promise(r => setTimeout(r, 400));
+
+  if (!live) {
+    // Simulated result
+    result = {
+      blobId:        '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      txHash:        '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      chunks:        Math.ceil(_uploadFile.size / (256 * 1024)),
+      spCount:       rnd(8, 14),
+      erasureFactor: '10+4',
+      confirmedAt:   new Date().toISOString(),
+    };
+  }
+
+  showUploadResult(result, live);
+}
+
+function showUploadError(msg) {
+  document.getElementById('upload-progress-panel').style.display = 'none';
+  document.getElementById('upload-panel').style.display = '';
+  document.getElementById('upload-result-panel').style.display = 'none';
+  alert('Upload failed: ' + msg);
+}
+
+function showUploadResult(result, live) {
+  document.getElementById('upload-progress-panel').style.display = 'none';
+  document.getElementById('upload-result-panel').style.display = '';
+
+  const explorerUrl = `https://explorer.shelby.xyz/shelbynet/blobs/${result.blobId}`;
+  document.getElementById('upload-result-content').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <i class="ti ti-circle-check" style="font-size:40px;color:var(--green);display:block;margin-bottom:10px" aria-hidden="true"></i>
+      <div style="font-size:16px;font-weight:500;color:var(--text-primary);margin-bottom:4px">
+        ${live ? 'Blob stored on Shelby testnet!' : 'Simulated upload complete'}
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary)">
+        ${live ? '✅ Real on-chain registration' : '⚠️ Server offline — simulated result'}
+      </div>
+    </div>
+
+    <div class="upload-result-grid">
+      <div class="upload-result-item">
+        <div class="upload-result-label">Blob ID</div>
+        <div class="upload-result-val upload-result-mono">${result.blobId.slice(0, 18)}…</div>
+      </div>
+      <div class="upload-result-item">
+        <div class="upload-result-label">Tx hash</div>
+        <div class="upload-result-val upload-result-mono">${result.txHash.slice(0, 18)}…</div>
+      </div>
+      <div class="upload-result-item">
+        <div class="upload-result-label">Erasure chunks</div>
+        <div class="upload-result-val">${result.chunks} chunks · ${result.erasureFactor}</div>
+      </div>
+      <div class="upload-result-item">
+        <div class="upload-result-label">SP nodes used</div>
+        <div class="upload-result-val">${result.spCount} nodes</div>
+      </div>
+      <div class="upload-result-item">
+        <div class="upload-result-label">Confirmed at</div>
+        <div class="upload-result-val">${new Date(result.confirmedAt).toLocaleTimeString()}</div>
+      </div>
+      <div class="upload-result-item">
+        <div class="upload-result-label">File size</div>
+        <div class="upload-result-val">${fmtBytes(_uploadFile?.size || 0)}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+      ${live ? `<a href="${explorerUrl}" target="_blank" rel="noopener" class="wallet-connect-btn wallet-connect-btn-blue" style="text-decoration:none;flex:1;min-width:140px">
+        <i class="ti ti-external-link" aria-hidden="true"></i> View on Explorer
+      </a>` : ''}
+      <button class="wallet-connect-btn" onclick="resetUploadState(); document.getElementById('upload-panel').style.display=''"
+              style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);flex:1;min-width:120px">
+        <i class="ti ti-upload" aria-hidden="true"></i> Upload another
+      </button>
+    </div>`;
+}
+
+// ── Upload modal (tracker quick-access) — mirrors page upload ─
+let _uploadFile2 = null;
+
+function onDropzoneDragOver2(e) { e.preventDefault(); document.getElementById('dropzone-modal').classList.add('dropzone-active'); }
+function onDropzoneDragLeave2() { document.getElementById('dropzone-modal').classList.remove('dropzone-active'); }
+function onDropzoneDrop2(e) {
+  e.preventDefault();
+  document.getElementById('dropzone-modal').classList.remove('dropzone-active');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) setUploadFile2(file);
+}
+function onFileInputChange2(e) {
+  const file = e.target.files?.[0];
+  if (file) setUploadFile2(file);
+  e.target.value = '';
+}
+function setUploadFile2(file) {
+  if (file.size > 10 * 1024 * 1024) { alert('File is too large. Maximum 10 MB.'); return; }
+  _uploadFile2 = file;
+  const zone = document.getElementById('dropzone-modal');
+  zone.classList.add('dropzone-has-file');
+  document.getElementById('dropzone-modal-label').innerHTML = `
+    <i class="ti ti-file-check" style="font-size:28px;margin-bottom:8px;display:block;color:var(--green)" aria-hidden="true"></i>
+    <strong style="color:var(--text-primary)">${file.name}</strong><br>
+    <span style="font-size:11px;color:var(--text-secondary)">${fmtBytes(file.size)}</span>`;
+  document.getElementById('upload-modal-submit-btn').disabled = false;
+}
+
+async function submitUpload2() {
+  if (!_uploadFile2) return;
+  const steps = [
+    { pct: 15, label: 'Reading file…' },
+    { pct: 30, label: 'Connecting to Shelby RPC…' },
+    { pct: 50, label: 'Clay erasure coding…' },
+    { pct: 70, label: 'Distributing to SP nodes…' },
+    { pct: 88, label: 'On-chain confirmation…' },
+  ];
+  document.getElementById('upload-modal-submit-btn').disabled = true;
+  document.getElementById('upload-modal-progress').style.display = '';
+  document.getElementById('upload-modal-result').style.display = 'none';
+
+  const setP = (pct, label) => {
+    const b = document.getElementById('upload-modal-bar');
+    const l = document.getElementById('upload-modal-label');
+    const p = document.getElementById('upload-modal-pct');
+    if (b) b.style.width = pct + '%';
+    if (l) l.textContent = label;
+    if (p) p.textContent = pct + '%';
+  };
+  setP(0, 'Preparing…');
+
+  let fileData = null;
+  try {
+    fileData = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = () => res(r.result.split(',')[1]);
+      r.onerror = () => rej(new Error('Read failed'));
+      r.readAsDataURL(_uploadFile2);
+    });
+  } catch (err) { alert('Could not read file: ' + err.message); return; }
+
+  let stepIdx = 0;
+  const timer = setInterval(() => {
+    if (stepIdx < steps.length) { setP(steps[stepIdx].pct, steps[stepIdx].label); stepIdx++; }
+  }, 550);
+
+  let result = null, live = false;
+  const health = await tryFetch(`${API}/health`);
+  if (health?.ok) {
+    try {
+      const resp = await fetch(`${API}/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: _uploadFile2.name, fileType: _uploadFile2.type || 'application/octet-stream', fileSizeBytes: _uploadFile2.size, data: fileData }),
+      });
+      const json = await resp.json();
+      if (json.ok) { result = json.data; live = true; }
+    } catch (_) {}
+  }
+  clearInterval(timer);
+  setP(100, 'Done!');
+  await new Promise(r => setTimeout(r, 350));
+
+  if (!result) {
+    result = {
+      blobId: '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      txHash: '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      chunks: Math.ceil(_uploadFile2.size / (256 * 1024)),
+      spCount: rnd(8, 14),
+      erasureFactor: '10+4',
+      confirmedAt: new Date().toISOString(),
+    };
+  }
+
+  document.getElementById('upload-modal-progress').style.display = 'none';
+  const res = document.getElementById('upload-modal-result');
+  res.style.display = '';
+  res.innerHTML = `
+    <div style="background:var(--green-light);border-radius:var(--radius-md);padding:14px;margin-top:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <i class="ti ti-circle-check" style="color:var(--green);font-size:20px" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:500;color:var(--text-primary)">${live ? 'Stored on Shelby testnet' : 'Simulated — server offline'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);display:flex;flex-direction:column;gap:4px">
+        <div><strong>Blob ID:</strong> <span style="font-family:monospace">${result.blobId.slice(0,20)}…</span></div>
+        <div><strong>Chunks:</strong> ${result.chunks} · erasure ${result.erasureFactor} · ${result.spCount} SP nodes</div>
+      </div>
+    </div>`;
 }
