@@ -23,7 +23,12 @@ function showPage(id, btn) {
   if (btn) btn.classList.add('active');
   drawerOpen = false;
   document.getElementById('drawer').classList.remove('open');
-  if (id === 'calculator') setTimeout(calcROI, 80);
+  if (id === 'calculator') {
+    setTimeout(calcROI, 80);
+    // Re-fetch APT price if stale (>90s old)
+    const age = _aptPricedAt ? (Date.now() - _aptPricedAt) / 1000 : Infinity;
+    if (age > 90) fetchAptPrice();
+  }
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -1717,13 +1722,3 @@ function startAptPriceClock(el) {
   }, 30_000);
 }
 
-// ── Re-fetch when calculator tab is opened while price is stale ──
-// Wrap showPage: if navigating to calculator and price is >90s old, refresh
-const _showPageBase = showPage;
-function showPage(id, btn) {
-  _showPageBase(id, btn);
-  if (id === 'calculator') {
-    const age = _aptPricedAt ? (Date.now() - _aptPricedAt) / 1000 : Infinity;
-    if (age > 90) fetchAptPrice();
-  }
-}
