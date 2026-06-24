@@ -474,43 +474,107 @@ function validateWalletInput() {
   document.getElementById('walletSubmitBtn').disabled = !isValidAptosAddr(val);
 }
 
+// ── Detect which wallet providers are available ──────────────
+function detectWallets() {
+  // Petra injects as window.aptos (AIP-62 standard)
+  // Some older Petra versions also set window.petra as an alias
+  const hasPetra   = !!(window.aptos || window.petra);
+  const hasMartian = !!window.martian;
+  return { hasPetra, hasMartian };
+}
+
+// ── Run on load: show Detected badges, swap buttons ──────────
+function initWalletDetection() {
+  // Extension wallets inject asynchronously — wait a tick
+  setTimeout(() => {
+    const { hasPetra, hasMartian } = detectWallets();
+
+    // Petra
+    const petraBadge   = document.getElementById('petraDetectedBadge');
+    const petraInstall = document.getElementById('petraInstallLink');
+    const petraBtn     = document.getElementById('petraConnectBtn');
+    if (petraBadge)   petraBadge.style.display   = hasPetra ? 'inline' : 'none';
+    if (petraInstall) petraInstall.style.display  = hasPetra ? 'none'   : 'flex';
+    if (petraBtn)     petraBtn.style.display      = hasPetra ? 'flex'   : 'none';
+
+    // Martian
+    const martianBadge   = document.getElementById('martianDetectedBadge');
+    const martianInstall = document.getElementById('martianInstallLink');
+    const martianBtn     = document.getElementById('martianConnectBtn');
+    if (martianBadge)   martianBadge.style.display   = hasMartian ? 'inline' : 'none';
+    if (martianInstall) martianInstall.style.display  = hasMartian ? 'none'   : 'flex';
+    if (martianBtn)     martianBtn.style.display      = hasMartian ? 'flex'   : 'none';
+  }, 200); // 200ms lets extensions inject before we check
+}
+
+// ── Get the Petra provider object ────────────────────────────
+function getPetraProvider() {
+  // Prefer window.aptos (current standard); fall back to window.petra (legacy)
+  return window.aptos || window.petra || null;
+}
+
 // ── Connect via Petra wallet extension ───────────────────────
 async function connectPetra() {
-  if (!window.petra) {
-    alert('Petra wallet extension not found.\n\nInstall it from petra.app, then refresh the page.');
+  const provider = getPetraProvider();
+  if (!provider) {
+    alert(
+      'Petra wallet extension not found.\n\n' +
+      '1. Install Petra from petra.app\n' +
+      '2. Create or unlock your wallet\n' +
+      '3. Refresh this page and try again.'
+    );
     return;
   }
+  const card = document.getElementById('petraCard');
   try {
-    const card = document.getElementById('petraCard');
     card.style.opacity = '0.6';
-    const account = await window.petra.connect();
-    const address = account?.address;
-    if (!address) throw new Error('No address returned');
+    // Standard AIP-62 call: returns { address, publicKey }
+    const response = await provider.connect();
+    // Petra may return address as a string or as an AccountAddress object
+    const address = typeof response?.address === 'string'
+      ? response.address
+      : response?.address?.toString?.() ?? response?.publicKey ?? null;
+    if (!address) throw new Error('No address returned from Petra');
     walletMode = 'petra';
     await setConnectedWallet(address);
   } catch (err) {
-    alert('Could not connect Petra: ' + (err?.message || err));
-    document.getElementById('petraCard').style.opacity = '1';
+    // User rejected or extension error
+    const msg = err?.message || String(err);
+    if (!msg.toLowerCase().includes('reject') && !msg.toLowerCase().includes('cancel')) {
+      alert('Could not connect Petra: ' + msg);
+    }
+    card.style.opacity = '1';
   }
 }
 
 // ── Connect via Martian wallet extension ─────────────────────
 async function connectMartian() {
   if (!window.martian) {
-    alert('Martian wallet extension not found.\n\nInstall it from martianwallet.xyz, then refresh the page.');
+    alert(
+      'Martian wallet extension not found.\n\n' +
+      '1. Install Martian from martianwallet.xyz\n' +
+      '2. Create or unlock your wallet\n' +
+      '3. Refresh this page and try again.'
+    );
     return;
   }
+  const card = document.getElementById('martianCard');
   try {
-    const card = document.getElementById('martianCard');
     card.style.opacity = '0.6';
+    // Martian uses window.martian and returns { address, publicKey }
     const response = await window.martian.connect();
-    const address = response?.address;
-    if (!address) throw new Error('No address returned');
+    const address = typeof response?.address === 'string'
+      ? response.address
+      : response?.address?.toString?.() ?? null;
+    if (!address) throw new Error('No address returned from Martian');
     walletMode = 'martian';
     await setConnectedWallet(address);
   } catch (err) {
-    alert('Could not connect Martian: ' + (err?.message || err));
-    document.getElementById('martianCard').style.opacity = '1';
+    const msg = err?.message || String(err);
+    if (!msg.toLowerCase().includes('reject') && !msg.toLowerCase().includes('cancel')) {
+      alert('Could not connect Martian: ' + msg);
+    }
+    card.style.opacity = '1';
   }
 }
 
@@ -544,8 +608,11 @@ async function setConnectedWallet(address) {
 
 // ── Disconnect ────────────────────────────────────────────────
 async function disconnectWallet() {
-  if (walletMode === 'petra' && window.petra?.disconnect) {
-    try { await window.petra.disconnect(); } catch (_) {}
+  if (walletMode === 'petra') {
+    const provider = getPetraProvider();
+    if (provider?.disconnect) {
+      try { await provider.disconnect(); } catch (_) {}
+    }
   }
   if (walletMode === 'martian' && window.martian?.disconnect) {
     try { await window.martian.disconnect(); } catch (_) {}
@@ -807,6 +874,7 @@ function renderWalletStats(data, live) {
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   loadAlerts();
+  initWalletDetection();
 
   const footnote = document.querySelector('#page-tracker .footnote');
   if (footnote) footnote.id = 'tracker-note';

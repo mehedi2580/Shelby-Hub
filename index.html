@@ -316,14 +316,21 @@
               <i class="ti ti-brand-chrome" style="color:#3B6D11" aria-hidden="true"></i>
             </div>
             <div>
-              <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Petra wallet</div>
-              <div style="font-size:11px;color:var(--text-secondary)">Official Aptos wallet</div>
+              <div style="font-size:13px;font-weight:500;color:var(--text-primary)">
+                Petra wallet
+                <span id="petraDetectedBadge" style="display:none;font-size:10px;background:var(--green-light);color:var(--green-text);padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:500">Detected</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary)">Official Aptos wallet · <code style="font-size:10px">window.aptos</code></div>
             </div>
           </div>
-          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Connect with the Petra browser extension. One-click sign-in with your Aptos account.</p>
-          <button class="wallet-connect-btn wallet-connect-btn-green" onclick="connectPetra()">
+          <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Connect with the Petra browser extension. One-click read-only connection — no signing required.</p>
+          <button class="wallet-connect-btn wallet-connect-btn-green" id="petraConnectBtn" onclick="connectPetra()">
             <i class="ti ti-plug" aria-hidden="true"></i> Connect Petra
           </button>
+          <a id="petraInstallLink" href="https://petra.app" target="_blank" rel="noopener"
+             class="wallet-connect-btn" style="display:none;background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);text-decoration:none;margin-top:6px">
+            <i class="ti ti-download" aria-hidden="true"></i> Install Petra
+          </a>
         </div>
         <div class="card wallet-option-card" id="martianCard">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -331,14 +338,21 @@
               <i class="ti ti-alien" style="color:#3C3489" aria-hidden="true"></i>
             </div>
             <div>
-              <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Martian wallet</div>
-              <div style="font-size:11px;color:var(--text-secondary)">Popular Aptos wallet</div>
+              <div style="font-size:13px;font-weight:500;color:var(--text-primary)">
+                Martian wallet
+                <span id="martianDetectedBadge" style="display:none;font-size:10px;background:var(--green-light);color:var(--green-text);padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:500">Detected</span>
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary)">Popular Aptos wallet · <code style="font-size:10px">window.martian</code></div>
             </div>
           </div>
           <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Connect with Martian browser extension. Fast and secure Aptos wallet with full dApp support.</p>
-          <button class="wallet-connect-btn wallet-connect-btn-purple" onclick="connectMartian()">
+          <button class="wallet-connect-btn wallet-connect-btn-purple" id="martianConnectBtn" onclick="connectMartian()">
             <i class="ti ti-plug" aria-hidden="true"></i> Connect Martian
           </button>
+          <a id="martianInstallLink" href="https://martianwallet.xyz" target="_blank" rel="noopener"
+             class="wallet-connect-btn" style="display:none;background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);text-decoration:none;margin-top:6px">
+            <i class="ti ti-download" aria-hidden="true"></i> Install Martian
+          </a>
         </div>
       </div>
 
