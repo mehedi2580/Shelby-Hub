@@ -88,6 +88,38 @@
       </div>
     </div>
 
+    <!-- ON-CHAIN STATS STRIP -->
+    <div class="onchain-strip card" id="onchainStrip" style="margin-bottom:1.25rem">
+      <div class="onchain-strip-header">
+        <span style="font-size:12px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em">
+          <i class="ti ti-antenna" style="font-size:14px;vertical-align:-2px;margin-right:4px" aria-hidden="true"></i>
+          Live on-chain · <a href="https://explorer.shelby.xyz/testnet" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">explorer.shelby.xyz/testnet</a>
+        </span>
+        <span id="onchainUpdated" style="font-size:11px;color:var(--text-tertiary)">Loading…</span>
+      </div>
+      <div class="onchain-stat-row" id="onchainStats">
+        <div class="onchain-stat" id="stat-blob-events">
+          <div class="onchain-stat-val">—</div>
+          <div class="onchain-stat-label">Total Blob Events</div>
+        </div>
+        <div class="onchain-stat-divider"></div>
+        <div class="onchain-stat" id="stat-placement-groups">
+          <div class="onchain-stat-val">—</div>
+          <div class="onchain-stat-label">Placement Groups</div>
+        </div>
+        <div class="onchain-stat-divider"></div>
+        <div class="onchain-stat" id="stat-storage-providers">
+          <div class="onchain-stat-val">—</div>
+          <div class="onchain-stat-label">Storage Providers</div>
+        </div>
+        <div class="onchain-stat-divider"></div>
+        <div class="onchain-stat" id="stat-slices">
+          <div class="onchain-stat-val">—</div>
+          <div class="onchain-stat-label">Slices</div>
+        </div>
+      </div>
+    </div>
+
     <p class="section-hd">Network snapshot</p>
     <div class="metric-grid" id="metrics"></div>
 
