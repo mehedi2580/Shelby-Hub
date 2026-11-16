@@ -100,22 +100,22 @@
       <div class="onchain-stat-row" id="onchainStats">
         <div class="onchain-stat" id="stat-blob-events">
           <div class="onchain-stat-val">—</div>
-          <div class="onchain-stat-label">Total Blob Events</div>
+          <div class="onchain-stat-label">Txns / min</div>
         </div>
         <div class="onchain-stat-divider"></div>
         <div class="onchain-stat" id="stat-placement-groups">
           <div class="onchain-stat-val">—</div>
-          <div class="onchain-stat-label">Placement Groups</div>
+          <div class="onchain-stat-label">Audit epoch</div>
         </div>
         <div class="onchain-stat-divider"></div>
         <div class="onchain-stat" id="stat-storage-providers">
           <div class="onchain-stat-val">—</div>
-          <div class="onchain-stat-label">Storage Providers</div>
+          <div class="onchain-stat-label">Payment epoch</div>
         </div>
         <div class="onchain-stat-divider"></div>
         <div class="onchain-stat" id="stat-slices">
           <div class="onchain-stat-val">—</div>
-          <div class="onchain-stat-label">Slices</div>
+          <div class="onchain-stat-label">Staking epoch</div>
         </div>
       </div>
     </div>
@@ -125,21 +125,16 @@
 
     <div class="two-col">
       <div class="card">
-        <p class="section-hd" style="margin-bottom:10px">Read/write activity (24h)</p>
-        <div class="chart-wrap"><canvas id="rwChart" role="img" aria-label="Line chart of 24h read and write activity on Shelby testnet">24h read/write data.</canvas></div>
-        <div class="chart-legend">
-          <span><span class="legend-sq" style="background:#378ADD"></span>Reads</span>
-          <span><span class="legend-sq" style="background:#1D9E75"></span>Writes</span>
+        <p class="section-hd" style="margin-bottom:10px">Activity mix (last 100 txns)</p>
+        <div class="chart-wrap"><canvas id="rwChart" role="img" aria-label="Doughnut chart of Shelby transaction types in the last 100 transactions">Recent transaction mix.</canvas></div>
+        <div class="chart-legend" id="rwLegend">
         </div>
       </div>
       <div class="card">
-        <p class="section-hd" style="margin-bottom:10px">Storage growth (14d)</p>
-        <div class="chart-wrap"><canvas id="storageChart" role="img" aria-label="Area chart of cumulative storage on Shelby testnet over 14 days">Storage growth data.</canvas></div>
+        <p class="section-hd" style="margin-bottom:10px">Write activity (live sample)</p>
+        <div class="chart-wrap"><canvas id="storageChart" role="img" aria-label="Line chart of Shelby writes per 10 seconds from the latest live sample">Live write activity.</canvas></div>
       </div>
     </div>
-
-    <p class="section-hd">Network utilisation</p>
-    <div class="card" style="margin-bottom:1.25rem" id="utilBars"></div>
 
     <p class="section-hd">Storage provider nodes</p>
     <div class="node-grid" id="nodeGrid"></div>
@@ -154,7 +149,7 @@
         <div class="node-legend" id="nodeLegend"></div>
       </div>
     </div>
-    <p class="footnote" id="tracker-note"><i class="ti ti-info-circle" aria-hidden="true"></i> Starting up — checking for live data from api.testnet.shelby.xyz…</p>
+    <p class="footnote" id="tracker-note"><i class="ti ti-info-circle" aria-hidden="true"></i> Starting up — checking for live data from shelbynet…</p>
   </div>
 
   <!-- ROI CALCULATOR -->

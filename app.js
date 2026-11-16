@@ -56,7 +56,7 @@ function isValidAptosAddr(addr) {
   return /^0x[0-9a-fA-F]{64}$/.test(addr);
 }
 
-// ── State: real vs simulated ──────────────────────────────────
+// ── State: live pipeline ──────────────────────────────────────
 let isLive = false;
 
 // ── Theme ─────────────────────────────────────────────────────
@@ -137,65 +137,42 @@ function setLiveBadge(live) {
   const badge = document.querySelector('#tracker-badge');
   if (dot) dot.style.background = live ? '#1D9E75' : '#BA7517';
   if (badge) {
-    badge.textContent = live ? 'Live' : 'Simulated';
+    badge.textContent = live ? 'Live' : 'Offline';
     badge.className = live ? 'badge' : 'badge badge-warn';
   }
 }
 
-// ── Fallback node data ────────────────────────────────────────
-const FALLBACK_NODES = [
-  { name: 'SP-Alpha-01',   region: 'US-East',    lat: 38, status: 'online'  },
-  { name: 'SP-Beta-07',    region: 'EU-West',    lat: 22, status: 'online'  },
-  { name: 'SP-Gamma-03',   region: 'AP-South',   lat: 41, status: 'online'  },
-  { name: 'SP-Delta-12',   region: 'US-West',    lat: 29, status: 'online'  },
-  { name: 'SP-Epsilon-05', region: 'EU-North',   lat: 18, status: 'syncing' },
-  { name: 'SP-Zeta-09',    region: 'AP-East',    lat: 55, status: 'online'  },
-  { name: 'SP-Eta-02',     region: 'SA-East',    lat: 67, status: 'online'  },
-  { name: 'SP-Theta-11',   region: 'US-Central', lat: 33, status: 'offline' },
-];
-
-const SHELBYNET_NODES = Array.from({ length: 16 }, (_, i) => ({
-  name: `SP-Node-${String(i + 1).padStart(2, '0')}`,
-  region: ['US-East','EU-West','AP-South','US-West','EU-North','AP-East','SA-East','US-Central',
-           'US-East','EU-West','AP-South','US-West','EU-North','AP-East','SA-East','US-Central'][i],
-  lat: [38,22,41,29,18,55,67,33,40,25,38,32,20,58,70,35][i],
-  status: i < 14 ? 'online' : (i === 14 ? 'syncing' : 'offline'),
-}));
-
-const EVENTS = [
-  ['ti-upload',          'Blob write confirmed',   'on-chain'],
-  ['ti-download',        'Parallel read served',   'RPC node'],
-  ['ti-shield-check',    'Audit challenge passed', 'smart contract'],
-  ['ti-coin',            'Micropayment settled',   'RPC node'],
-  ['ti-arrows-exchange', 'Erasure chunk rebuilt',  'SP node'],
-  ['ti-network',         'New placement group',    'smart contract'],
-  ['ti-lock',            'Access token verified',  'RPC node'],
-  ['ti-database',        'Merkle root committed',  'smart contract'],
-];
+// NOTE: This dashboard used to ship hardcoded "fallback" nodes and events
+// (FALLBACK_NODES / SHELBYNET_NODES / EVENTS) that were shown as if they
+// were real data. They were removed in v1.2.0: anything the public API
+// cannot provide is now shown as "—" or an honest empty state instead
+// of invented numbers.
 
 // ── Render metrics ────────────────────────────────────────────
 function renderMetrics(networkData, nodeData) {
-  const online = (nodeData || FALLBACK_NODES).filter(n => n.status === 'online').length;
-  const total  = (nodeData || FALLBACK_NODES).length;
+  const nodes = nodeData || [];
+  const hasNodes = nodes.length > 0;
+  const online = nodes.filter(n => n.status === 'online').length;
 
-  const totalBytes  = networkData?.totalBytes  || 0;
-  const totalBlobs  = networkData?.totalBlobs  || 0;
+  const totalBytes  = networkData?.totalBytes  ?? null;
+  const totalBlobs  = networkData?.totalBlobs  ?? null;
   const capBytes    = networkData?.storageCapacityBytes || 10 * 1024 ** 4;
   const usedPct     = totalBytes ? ((totalBytes / capBytes) * 100).toFixed(1) : null;
+  const auditRate   = networkData?.auditPassRate ?? null;
 
   const items = [
-    { label: 'Storage used', val: totalBytes ? fmtBytes(totalBytes) : rnd(380, 430) / 10 + ' TB', sub: usedPct ? usedPct + '% of 10 TiB' : '~10 TiB capacity', live: !!totalBytes },
-    { label: 'Active nodes', val: online + ' / ' + total, sub: 'shelbynet: 16 SPs', live: !!nodeData },
-    { label: 'Blobs stored', val: totalBlobs ? totalBlobs.toLocaleString() : rnd(2100, 2800).toLocaleString(), sub: totalBlobs ? 'on-chain count' : 'estimated', live: !!totalBlobs },
-    { label: 'Network', val: networkData?.network || 'TESTNET', sub: 'Early access', live: !!networkData },
-    { label: 'Avg latency', val: rnd(68, 130) + ' ms', sub: 'sub-second', live: false },
-    { label: 'Audit pass rate', val: rnd(94, 99) + '%', sub: 'simulated', live: false },
-    { label: 'Contract', val: networkData ? shortAddr(networkData.contractAddress) : '0x85fd…8e6a', sub: 'Aptos testnet', live: !!networkData },
-    { label: 'RPC', val: networkData?.rpcUrl ? 'Connected' : 'testnet', sub: 'api.testnet.shelby.xyz', live: !!networkData?.rpcUrl },
+    { label: 'Storage used', val: totalBytes != null ? fmtBytes(totalBytes) : '—', sub: usedPct ? usedPct + '% of 10 TiB' : 'not published', live: totalBytes != null },
+    { label: 'Active nodes', val: hasNodes ? online + ' / ' + nodes.length : '—', sub: hasNodes ? 'on-chain' : 'no public registry', live: hasNodes },
+    { label: 'Blobs stored', val: totalBlobs != null ? totalBlobs.toLocaleString() : '—', sub: totalBlobs != null ? 'on-chain count' : 'not published', live: totalBlobs != null },
+    { label: 'Network', val: networkData?.network || 'SHELBYNET', sub: 'Shelby chain', live: !!networkData },
+    { label: 'Avg latency', val: '—', sub: 'not measurable', live: false },
+    { label: 'Audit pass rate', val: auditRate != null ? auditRate + '%' : '—', sub: auditRate != null ? 'on-chain' : 'no recent audits', live: auditRate != null },
+    { label: 'Contract', val: networkData ? shortAddr(networkData.contractAddress) : '0x85fd…8e6a', sub: 'Shelbynet', live: !!networkData },
+    { label: 'RPC', val: networkData?.rpcUrl ? 'Connected' : 'shelbynet', sub: 'api.shelbynet.shelby.xyz', live: !!networkData?.rpcUrl },
   ];
 
   document.getElementById('metrics').innerHTML = items.map(c => `
-    <div class="metric" title="${c.live ? '✅ Live on-chain data' : '⚠️ Simulated data'}">
+    <div class="metric" title="${c.live ? '✅ Live on-chain data' : '⚠️ Not available via public API'}">
       <div class="metric-label">${c.label} ${c.live ? '<span style="color:var(--green);font-size:9px">●LIVE</span>' : ''}</div>
       <div class="metric-val">${c.val}</div>
       <div class="metric-sub">${c.sub}</div>
@@ -203,64 +180,58 @@ function renderMetrics(networkData, nodeData) {
 }
 
 // ── Render charts ─────────────────────────────────────────────
-function renderCharts(historyData) {
+function renderCharts(historyData, recentTxns, nodeData) {
   const { text: tc, grid: gc } = chartColors();
 
-  let slabels, svals;
-  if (historyData && historyData.length > 0) {
-    slabels = historyData.map(d => {
-      const dt = new Date(d.date);
-      return (dt.getMonth() + 1) + '/' + dt.getDate();
-    });
-    let cum = 0;
-    svals = historyData.map(d => { cum += d.blobs; return cum; });
-  } else {
-    slabels = []; svals = [];
-    let base = 32;
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 86400000);
-      slabels.push((d.getMonth() + 1) + '/' + d.getDate());
-      base += rnd(1, 5);
-      svals.push(+base.toFixed(1));
-    }
-  }
+  // Storage chart: per-10s write buckets from the live sample (or empty).
+  const buckets = historyData?.buckets || [];
+  const slabels = buckets.map(b => {
+    const dt = new Date(b.t);
+    return dt.getHours().toString().padStart(2, '0') + ':' +
+           dt.getMinutes().toString().padStart(2, '0') + ':' +
+           dt.getSeconds().toString().padStart(2, '0');
+  });
+  const svals = buckets.map(b => b.n);
 
-  const rwLabels = [], reads = [], writes = [];
-  for (let i = 23; i >= 0; i--) {
-    const h = new Date(Date.now() - i * 3600000);
-    rwLabels.push(h.getHours().toString().padStart(2, '0') + ':00');
-    reads.push(rnd(400, 900));
-    writes.push(rnd(80, 280));
-  }
+  // Activity mix: function-name breakdown of the latest transactions.
+  const mixCounts = {};
+  (recentTxns || []).forEach(t => {
+    const k = t.functionName || t.fn || 'other';
+    mixCounts[k] = (mixCounts[k] || 0) + 1;
+  });
+  const mixEntries = Object.entries(mixCounts).sort((a, b) => b[1] - a[1]);
+  const mixColors = ['#1D9E75', '#378ADD', '#7F77DD', '#BA7517', '#A32D2D', '#5B8DEF', '#2AA198', '#8E44AD'];
 
   if (rwChart) rwChart.destroy();
   rwChart = new Chart(document.getElementById('rwChart'), {
-    type: 'line',
+    type: 'doughnut',
     data: {
-      labels: rwLabels,
-      datasets: [
-        { label: 'Reads',  data: reads,  borderColor: '#378ADD', backgroundColor: 'rgba(55,138,221,0.07)', borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: true },
-        { label: 'Writes', data: writes, borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.07)', borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: true, borderDash: [4, 3] },
-      ]
+      labels: mixEntries.map(e => e[0]),
+      datasets: [{
+        data: mixEntries.map(e => e[1]),
+        backgroundColor: mixEntries.map((_, i) => mixColors[i % mixColors.length]),
+        borderWidth: 0,
+      }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: tc, font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: gc } },
-        y: { ticks: { color: tc, font: { size: 9 } }, grid: { color: gc } },
-      }
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: { legend: { display: false } }
     }
   });
+  document.getElementById('rwLegend').innerHTML = mixEntries.length === 0
+    ? '<span style="color:var(--text-tertiary)">No recent transactions</span>'
+    : mixEntries.map((e, i) =>
+        `<span><span class="legend-sq" style="background:${mixColors[i % mixColors.length]}"></span>${e[0]} ${e[1]}</span>`
+      ).join('');
 
   if (storageChart) storageChart.destroy();
-  const isRealStorage = historyData && historyData.length > 0;
+  const isRealStorage = buckets.length > 0;
   storageChart = new Chart(document.getElementById('storageChart'), {
     type: 'line',
     data: {
       labels: slabels,
       datasets: [{
-        label: isRealStorage ? 'Blobs (cumulative)' : 'TB used',
+        label: 'Writes / 10s',
         data:  svals,
         borderColor: '#7F77DD', backgroundColor: 'rgba(127,119,221,0.1)',
         borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: true
@@ -275,13 +246,19 @@ function renderCharts(historyData) {
           : { display: false }
       },
       scales: {
-        x: { ticks: { color: tc, font: { size: 9 } }, grid: { color: gc } },
-        y: { ticks: { color: tc, font: { size: 9 }, callback: v => isRealStorage ? v + ' blobs' : v + ' TB' }, grid: { color: gc } },
+        x: { ticks: { color: tc, font: { size: 9 }, maxTicksLimit: 6 }, grid: { color: gc } },
+        y: { ticks: { color: tc, font: { size: 9 }, callback: v => v + ' writes' }, grid: { color: gc }, beginAtZero: true },
       }
     }
   });
 
-  const nodes = SHELBYNET_NODES;
+  const nodes = nodeData || [];
+  if (nodes.length === 0) {
+    if (nodeChart) { nodeChart.destroy(); nodeChart = null; }
+    document.getElementById('nodeLegend').innerHTML =
+      '<span style="color:var(--text-tertiary)">No storage-provider registry is published on-chain.</span>';
+    return;
+  }
   const on = nodes.filter(n => n.status === 'online').length;
   const sy = nodes.filter(n => n.status === 'syncing').length;
   const of = nodes.filter(n => n.status === 'offline').length;
@@ -305,8 +282,18 @@ function renderCharts(historyData) {
 let _currentNodes = [];
 
 function renderNodes(liveNodes) {
-  const nodes = liveNodes && liveNodes.length > 0 ? liveNodes : SHELBYNET_NODES;
+  const nodes = liveNodes || [];
   _currentNodes = nodes;
+  if (nodes.length === 0) {
+    document.getElementById('nodeGrid').innerHTML =
+      `<div class="card" style="grid-column:1/-1;text-align:center;padding:24px 16px">
+        <p style="font-size:13px;color:var(--text-secondary);margin:0">
+          No live node list is available — the Shelby protocol does not publish
+          a storage-provider registry on-chain.
+        </p>
+      </div>`;
+    return;
+  }
   document.getElementById('nodeGrid').innerHTML = nodes.map((n, i) => {
     const cls = n.status === 'online' ? 'on' : n.status === 'syncing' ? 'syn' : 'off';
     const addrLabel = n.address && n.address.startsWith('0x') ? shortAddr(n.address) : n.name || n.address;
@@ -315,7 +302,7 @@ function renderNodes(liveNodes) {
                  role="button" aria-label="View details for ${addrLabel}">
       <div class="node-name"><span class="dot dot-${cls}" aria-hidden="true"></span>${addrLabel}</div>
       <div class="node-meta">${n.region} · ${n.lat || '—'}ms avg</div>
-      <div class="node-meta">${n.stake ? n.stake.toLocaleString() + ' staked' : rnd(800, 2400).toLocaleString() + ' chunks'}</div>
+      <div class="node-meta">${n.stake ? n.stake.toLocaleString() + ' staked' : '—'}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">
         <span class="pill pill-${cls}">${n.status}</span>
         <span style="font-size:11px;color:var(--text-tertiary)"><i class="ti ti-chevron-right" style="font-size:13px" aria-hidden="true"></i></span>
@@ -324,21 +311,8 @@ function renderNodes(liveNodes) {
   }).join('');
 }
 
-// ── Render util bars ──────────────────────────────────────────
-function renderUtil() {
-  const bars = [
-    { l: 'Fiber network',  p: rnd(55, 82) },
-    { l: 'Chunk capacity', p: rnd(38, 65) },
-    { l: 'Audit load',     p: rnd(20, 45) },
-    { l: 'RPC throughput', p: rnd(48, 75) },
-  ];
-  document.getElementById('utilBars').innerHTML = bars.map(b => `
-    <div class="bar-row">
-      <span class="bar-label">${b.l}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${b.p}%;background:${b.p > 70 ? '#BA7517' : '#378ADD'}"></div></div>
-      <span class="bar-val">${b.p}%</span>
-    </div>`).join('');
-}
+// (The "Network utilisation" bars were removed in v1.2.0 — they showed
+// random percentages with no data source behind them.)
 
 // ── Render live event feed ────────────────────────────────────
 function renderFeed(recentTxns) {
@@ -357,13 +331,7 @@ function renderFeed(recentTxns) {
       </div>`;
     }).join('');
   } else {
-    const shuffled = [...EVENTS].sort(() => Math.random() - 0.5).slice(0, 5);
-    rows = shuffled.map((e, i) => `
-      <div class="feed-row">
-        <i class="ti ${e[0]} feed-icon" aria-hidden="true"></i>
-        <span class="feed-text">${e[1]} <span class="feed-node">${e[2]}</span></span>
-        <span class="feed-time">${secsAgo(rnd(i * 9 + 2, i * 9 + 40))}</span>
-      </div>`).join('');
+    rows = `<p style="font-size:13px;color:var(--text-secondary);text-align:center;padding:16px 0">No recent transactions available.</p>`;
   }
   document.getElementById('eventFeed').innerHTML =
     `<p class="section-hd" style="margin-bottom:8px">
@@ -392,21 +360,20 @@ async function refreshTracker() {
   }
 
   renderMetrics(networkData, nodeData);
-  renderCharts(historyData);
+  renderCharts(historyData, recentTxns, nodeData);
   renderNodes(nodeData);
-  renderUtil();
   renderFeed(recentTxns);
 
-  // Check alert thresholds after every refresh
-  const onlineCount = (nodeData || FALLBACK_NODES).filter(n => n.status === 'online').length;
-  const totalBlobsNow = networkData?.totalBlobs || 0;
+  // Check alert thresholds after every refresh (null = no data, skipped)
+  const onlineCount = nodeData ? nodeData.filter(n => n.status === 'online').length : null;
+  const totalBlobsNow = networkData?.totalBlobs ?? null;
   checkAlerts({ onlineNodes: onlineCount, totalBlobs: totalBlobsNow });
 
   const note = document.getElementById('tracker-note');
   if (note) {
     note.textContent = serverUp
-      ? `✅ Live data from api.testnet.shelby.xyz — last updated ${new Date().toLocaleTimeString()}`
-      : `⚠️ Server offline — showing simulated data. Run: npm start`;
+      ? `✅ Live data from shelbynet — last updated ${new Date().toLocaleTimeString()}`
+      : `⚠️ API unavailable — live data could not be loaded.`;
   }
 }
 
@@ -669,8 +636,9 @@ function showWalletDashboard() {
 
   // Populate address bar
   document.getElementById('walletFullAddr').textContent = connectedAddress;
+  // Account data lives on shelbynet — link to its REST account record.
   document.getElementById('walletExplorerLink').href =
-    `https://explorer.aptoslabs.com/account/${connectedAddress}?network=testnet`;
+    `https://api.shelbynet.shelby.xyz/v1/accounts/${connectedAddress}`;
 
   // Avatar — first + last char of address
   const av = document.getElementById('walletAvatar');
@@ -731,38 +699,11 @@ async function loadWalletData() {
     }
     renderWalletStats(data, true);
   } else {
-    // Server offline — show simulated data with a warning
+    // API unavailable — show the error panel, no invented data.
     document.getElementById('wallet-error').style.display = '';
     document.getElementById('wallet-error-msg').textContent =
-      'Server offline — showing simulated data. Run: npm start';
-    renderWalletStats(generateSimulatedWalletData(), false);
+      'API unavailable — wallet data could not be loaded.';
   }
-}
-
-// ── Simulated wallet data for offline fallback ────────────────
-function generateSimulatedWalletData() {
-  const days = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
-    days.push({ date: d.toISOString().split('T')[0], blobs: rnd(0, 8) });
-  }
-  return {
-    totalTxns:    rnd(12, 80),
-    totalBlobs:   rnd(5, 40),
-    totalBytes:   rnd(1, 900) * 1e6,
-    firstSeen:    new Date(Date.now() - rnd(10, 90) * 86400000).toISOString(),
-    lastActive:   new Date(Date.now() - rnd(0, 3) * 3600000).toISOString(),
-    gasUsed:      rnd(5000, 80000),
-    txBreakdown:  { register_blob: rnd(5, 35), delete_blob: rnd(0, 5), audit_blob: rnd(0, 10), other: rnd(0, 8) },
-    history:      days,
-    recentTxns:   Array.from({ length: 6 }, (_, i) => ({
-      hash:      '0x' + Array.from({length:8}, () => Math.floor(Math.random()*16).toString(16)).join('') + '…',
-      fn:        ['register_blob','register_blob','audit_blob','delete_blob','register_blob','register_blob'][i],
-      timestamp: new Date(Date.now() - rnd(i * 3600, (i + 1) * 3600) * 1000).toISOString(),
-      success:   Math.random() > 0.05,
-      gasUsed:   rnd(200, 1200),
-    })),
-  };
 }
 
 // ── Render wallet stats ───────────────────────────────────────
@@ -774,16 +715,16 @@ function renderWalletStats(data, live) {
   const lastDate  = data.lastActive ? new Date(data.lastActive).toLocaleString() : '—';
 
   const metrics = [
-    { label: 'Total transactions', val: (data.totalTxns || 0).toLocaleString(), sub: 'on Shelby contract', live },
-    { label: 'Blobs registered',   val: (data.totalBlobs || 0).toLocaleString(), sub: 'cumulative', live },
-    { label: 'Data stored',        val: fmtBytes(data.totalBytes || 0), sub: 'estimated', live },
-    { label: 'Gas used',           val: (data.gasUsed || 0).toLocaleString(), sub: 'octas', live },
-    { label: 'First seen',         val: firstDate, sub: 'on testnet', live },
+    { label: 'Total transactions', val: (data.totalTxns || 0).toLocaleString(), sub: data.truncated ? 'latest 200 shown' : 'on Shelby contract', live },
+    { label: 'Blobs registered',   val: (data.totalBlobs || 0).toLocaleString(), sub: data.truncated ? 'in latest 200 txns' : 'cumulative', live },
+    { label: 'Data stored',        val: data.totalBytes != null ? fmtBytes(data.totalBytes) : '—', sub: data.totalBytes != null ? 'estimated' : 'not available', live },
+    { label: 'Gas used',           val: data.gasUsed != null ? data.gasUsed.toLocaleString() : '—', sub: data.gasUsed != null ? 'octas' : 'not available', live },
+    { label: 'First seen',         val: firstDate, sub: 'on shelbynet', live },
     { label: 'Last active',        val: lastDate, sub: 'most recent tx', live },
   ];
 
   document.getElementById('walletMetrics').innerHTML = metrics.map(m => `
-    <div class="metric" title="${m.live ? '✅ Live on-chain data' : '⚠️ Simulated data'}">
+    <div class="metric" title="${m.live ? '✅ Live on-chain data' : '⚠️ Not available via public API'}">
       <div class="metric-label">${m.label} ${m.live ? '<span style="color:var(--green);font-size:9px">●LIVE</span>' : ''}</div>
       <div class="metric-val">${m.val}</div>
       <div class="metric-sub">${m.sub}</div>
@@ -849,13 +790,12 @@ function renderWalletStats(data, live) {
     : txns.map(t => {
         const ago = Math.round((Date.now() - new Date(t.timestamp).getTime()) / 1000);
         const hashShort = t.hash ? t.hash.slice(0, 10) + '…' + t.hash.slice(-4) : '—';
-        const explorerUrl = `https://explorer.aptoslabs.com/txn/${t.hash}?network=testnet`;
         return `<div class="feed-row">
           <i class="ti ${fnIcon(t.fn)} feed-icon" aria-hidden="true"></i>
           <span class="feed-text">
-            <a href="${explorerUrl}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${hashShort}</a>
+            <span style="font-family:monospace">${hashShort}</span>
             — ${t.fn || 'tx'}
-            <span class="feed-node" style="margin-left:4px">gas: ${(t.gasUsed || 0).toLocaleString()}</span>
+            <span class="feed-node" style="margin-left:4px">gas: ${t.gasUsed != null ? t.gasUsed.toLocaleString() : '—'}</span>
           </span>
           <span class="feed-time" style="display:flex;align-items:center;gap:4px">
             ${t.success ? '<span style="color:var(--green)">✓</span>' : '<span style="color:var(--red)">✗</span>'}
@@ -868,8 +808,8 @@ function renderWalletStats(data, live) {
   const noteEl = document.getElementById('wallet-note-text');
   if (noteEl) {
     noteEl.textContent = live
-      ? `✅ Live data from Aptos testnet indexer — last updated ${new Date().toLocaleTimeString()}`
-      : `⚠️ Server offline — simulated data shown`;
+      ? `✅ Live data from shelbynet indexer — last updated ${new Date().toLocaleTimeString()}`
+      : `⚠️ API unavailable — data could not be loaded`;
   }
 }
 
@@ -1173,7 +1113,7 @@ function renderNodeModal(data, node, live) {
   // ── Note ─────────────────────────────────────────────────────
   document.getElementById('nodeModalNoteText').textContent = live
     ? `✅ Live on-chain data — last updated ${new Date().toLocaleTimeString()}`
-    : '⚠️ Simulated data — run npm start to connect live node data';
+    : '⚠️ Live node data is unavailable — no provider registry is published on-chain';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1417,7 +1357,7 @@ function onFileInputChange(e) {
 }
 function setUploadFile(file) {
   if (file.size > 10 * 1024 * 1024) {
-    alert('File is too large. Maximum size is 10 MB for the testnet demo.');
+    alert('File is too large. Maximum size is 10 MB.');
     return;
   }
   _uploadFile = file;
@@ -1484,7 +1424,7 @@ async function submitUpload() {
     }
   }, 600);
 
-  // Try real API upload, with simulated fallback
+  // Try real API upload (unavailable uploads show an error — no fake result)
   let result = null;
   let live    = false;
 
@@ -1511,15 +1451,8 @@ async function submitUpload() {
   await new Promise(r => setTimeout(r, 400));
 
   if (!live) {
-    // Simulated result
-    result = {
-      blobId:        '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      txHash:        '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      chunks:        Math.ceil(_uploadFile.size / (256 * 1024)),
-      spCount:       rnd(8, 14),
-      erasureFactor: '10+4',
-      confirmedAt:   new Date().toISOString(),
-    };
+    showUploadError('Uploads are unavailable on the hosted dashboard — the Shelby SDK is no longer published on npm, so files cannot be stored from here.');
+    return;
   }
 
   showUploadResult(result, live);
@@ -1541,7 +1474,7 @@ function showUploadResult(result, live) {
     <div style="text-align:center;margin-bottom:20px">
       <i class="ti ti-circle-check" style="font-size:40px;color:var(--green);display:block;margin-bottom:10px" aria-hidden="true"></i>
       <div style="font-size:16px;font-weight:500;color:var(--text-primary);margin-bottom:4px">
-        ${live ? 'Blob stored on Shelby testnet!' : 'Simulated upload complete'}
+        ${live ? 'Blob stored on Shelby!' : 'Simulated upload complete'}
       </div>
       <div style="font-size:12px;color:var(--text-secondary)">
         ${live ? '✅ Real on-chain registration' : '⚠️ Server offline — simulated result'}
@@ -1669,25 +1602,26 @@ async function submitUpload2() {
   setP(100, 'Done!');
   await new Promise(r => setTimeout(r, 350));
 
-  if (!result) {
-    result = {
-      blobId: '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      txHash: '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      chunks: Math.ceil(_uploadFile2.size / (256 * 1024)),
-      spCount: rnd(8, 14),
-      erasureFactor: '10+4',
-      confirmedAt: new Date().toISOString(),
-    };
-  }
-
   document.getElementById('upload-modal-progress').style.display = 'none';
   const res = document.getElementById('upload-modal-result');
   res.style.display = '';
+  if (!result) {
+    res.innerHTML = `
+    <div style="background:var(--red-light);border-radius:var(--radius-md);padding:14px;margin-top:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <i class="ti ti-alert-circle" style="color:var(--red);font-size:20px" aria-hidden="true"></i>
+        <span style="font-size:13px;font-weight:500;color:var(--text-primary)">Upload unavailable</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary)">The Shelby SDK is no longer published on npm, so files cannot be stored from the hosted dashboard.</div>
+    </div>`;
+    document.getElementById('upload-modal-submit-btn').disabled = false;
+    return;
+  }
   res.innerHTML = `
     <div style="background:var(--green-light);border-radius:var(--radius-md);padding:14px;margin-top:4px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <i class="ti ti-circle-check" style="color:var(--green);font-size:20px" aria-hidden="true"></i>
-        <span style="font-size:13px;font-weight:500;color:var(--text-primary)">${live ? 'Stored on Shelby testnet' : 'Simulated — server offline'}</span>
+        <span style="font-size:13px;font-weight:500;color:var(--text-primary)">Stored on Shelby</span>
       </div>
       <div style="font-size:11px;color:var(--text-secondary);display:flex;flex-direction:column;gap:4px">
         <div><strong>Blob ID:</strong> <span style="font-family:monospace">${result.blobId.slice(0,20)}…</span></div>
@@ -1795,102 +1729,31 @@ function startAptPriceClock(el) {
 
 
 // ════════════════════════════════════════════════════════════════
-// ON-CHAIN STATS (explorer.shelby.xyz/testnet)
-// Polls the shelbynet GraphQL indexer for:
-//   • Total Blob Events (all contract event emissions)
-//   • Placement Groups (on-chain resource count)
-//   • Storage Providers (registered SP count)
-//   • Slices (erasure-coded chunk registrations)
-// Falls back to Aptos testnet indexer + contract resources when
-// shelbynet indexer is unreachable.
+// ON-CHAIN STATS (top strip on the tracker page)
+// Served by /api/onchain-stats from live shelbynet data:
+//   • Txns / min (measured from the latest 100 transactions)
+//   • Audit epoch, Payment epoch, Staking epoch (contract resources)
+// The old strip metrics (total blob events, placement groups, storage
+// providers, slices) cannot be computed: the indexer exposes no events
+// table and no user_transactions aggregate, and there is no on-chain
+// provider registry.
 // ════════════════════════════════════════════════════════════════
 
-const SHELBYNET_GQL  = 'https://api.shelbynet.shelby.xyz/v1/graphql';
-const TESTNET_GQL    = 'https://api.testnet.aptoslabs.com/v1/graphql';
-const SHELBY_ADDR    = '0x85fdb9a176ab8ef1d9d9c1b60d60b3924f0800ac1de1cc2085fb0b8bb4988e6a';
 const ONCHAIN_STATS_API = `${API}/onchain-stats`;
 
 let _lastOnchainStats = null;
 
 async function fetchOnchainStats() {
-  // Try our server endpoint first (proxies both indexers, handles CORS)
   const result = await tryFetch(ONCHAIN_STATS_API);
   if (result?.ok && result.data) {
-    renderOnchainStats(result.data, result.live);
+    renderOnchainStats(result.data, true);
     return;
   }
-
-  // Server offline → try direct GraphQL from browser (CORS may block, graceful)
-  try {
-    const stats = await fetchOnchainStatsDirect();
-    if (stats) { renderOnchainStats(stats, true); return; }
-  } catch (_) {}
-
-  // Use cached or simulated
-  renderOnchainStats(_lastOnchainStats || generateSimulatedOnchainStats(), false);
-}
-
-// ── Direct browser fetch (works if CORS allows it) ────────────
-async function fetchOnchainStatsDirect() {
-  const gqlFetch = async (endpoint, query, vars = {}) => {
-    const r = await fetch(endpoint, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ query, variables: vars }),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const j = await r.json();
-    if (j.errors) throw new Error(JSON.stringify(j.errors));
-    return j.data;
-  };
-
-  // Query shelbynet indexer for all event types from the Shelby contract
-  const data = await gqlFetch(SHELBYNET_GQL, `
-    query ShelbyOnchainStats {
-      blob_events: events_aggregate(
-        where: { account_address: { _eq: "${SHELBY_ADDR}" } }
-      ) { aggregate { count } }
-
-      placement_events: events_aggregate(
-        where: {
-          account_address: { _eq: "${SHELBY_ADDR}" }
-          type: { _ilike: "%placement%" }
-        }
-      ) { aggregate { count } }
-
-      slice_events: events_aggregate(
-        where: {
-          account_address: { _eq: "${SHELBY_ADDR}" }
-          type: { _ilike: "%slice%" }
-        }
-      ) { aggregate { count } }
-
-      sp_events: events_aggregate(
-        where: {
-          account_address: { _eq: "${SHELBY_ADDR}" }
-          type: { _ilike: "%storage_provider%" }
-        }
-      ) { aggregate { count } }
-    }
-  `);
-
-  return {
-    totalBlobEvents:    data?.blob_events?.aggregate?.count      ?? 0,
-    placementGroups:    data?.placement_events?.aggregate?.count ?? 0,
-    storageProviders:   data?.sp_events?.aggregate?.count        ?? 16,
-    slices:             data?.slice_events?.aggregate?.count     ?? 0,
-  };
-}
-
-// ── Simulated fallback ────────────────────────────────────────
-function generateSimulatedOnchainStats() {
-  const prev = _lastOnchainStats;
-  return {
-    totalBlobEvents:  prev ? prev.totalBlobEvents  + rnd(0, 3) : rnd(1200, 2800),
-    placementGroups:  prev ? prev.placementGroups  + rnd(0, 1) : rnd(80, 160),
-    storageProviders: 16,   // fixed at 16 per shelbynet docs
-    slices:           prev ? prev.slices           + rnd(0, 8) : rnd(8000, 24000),
-  };
+  // API unavailable — keep the last good values if any, else blanks.
+  renderOnchainStats(
+    _lastOnchainStats || { txnRatePerMin: null, auditEpoch: null, paymentEpoch: null, stakingEpoch: null },
+    false,
+  );
 }
 
 // ── Render the four stats strip ───────────────────────────────
@@ -1903,10 +1766,10 @@ function renderOnchainStats(stats, live) {
     : String(n);
 
   const pairs = [
-    ['stat-blob-events',      stats.totalBlobEvents,  'Total Blob Events'],
-    ['stat-placement-groups', stats.placementGroups,  'Placement Groups'],
-    ['stat-storage-providers',stats.storageProviders, 'Storage Providers'],
-    ['stat-slices',           stats.slices,           'Slices'],
+    ['stat-blob-events',      stats.txnRatePerMin,  'Txns / min'],
+    ['stat-placement-groups', stats.auditEpoch,     'Audit epoch'],
+    ['stat-storage-providers',stats.paymentEpoch,   'Payment epoch'],
+    ['stat-slices',           stats.stakingEpoch,   'Staking epoch'],
   ];
 
   pairs.forEach(([id, val, label]) => {
@@ -1925,7 +1788,7 @@ function renderOnchainStats(stats, live) {
   if (ts) {
     ts.textContent = live
       ? `✅ Live · ${new Date().toLocaleTimeString()}`
-      : `⚠ Simulated · ${new Date().toLocaleTimeString()}`;
+      : `⚠ API unavailable · ${new Date().toLocaleTimeString()}`;
     ts.style.color = live ? 'var(--green-text)' : 'var(--yellow)';
   }
 

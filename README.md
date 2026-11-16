@@ -2,12 +2,13 @@
 
 A community-built protocol dashboard for [Shelby](https://shelby.xyz) — Web3's first cloud-grade hot storage network co-developed by Aptos Labs and Jump Crypto.
 
-> v1.1 — Official Shelby logo, auto-refresh every 10s, updated Discord link.
+> v1.2 — Live data via Vercel Serverless Functions + the shelbynet indexer and REST API. No SDK required. Anything the public API cannot provide is shown as "—" or an honest empty state instead of simulated numbers.
 
 ## Features
 
-- **Testnet tracker** — live network snapshot, read/write charts, storage growth, node grid, utilisation bars, and auto-refreshing event feed
-- **Node ROI calculator** — estimate earnings as a Shelby Storage Provider with adjustable sliders and 12-month projection chart
+- **Testnet tracker** — live network snapshot from shelbynet: transaction rate, protocol epochs, activity mix, write-activity chart, and an auto-refreshing live transaction feed
+- **Node ROI calculator** — estimate earnings as a Shelby Storage Provider with adjustable sliders, a live APT price feed, and a 12-month projection chart
+- **Wallet** — connect an Aptos wallet (or paste an address) to see real on-chain activity against the Shelby contract
 - **Learn about Shelby** — protocol overview, key features, architecture explainer, official links
 - **About developer** — developer profile, journey timeline, skills, and social links
 
@@ -18,7 +19,20 @@ shelby-hub/
 ├── index.html      # Main HTML — all four pages
 ├── style.css       # Full stylesheet (light + dark mode)
 ├── app.js          # All interactivity and chart logic
+├── api/            # Vercel Serverless Functions (one file per endpoint)
+│   ├── _lib.js     # Shared data layer: shelbynet indexer + REST
+│   ├── health.js   # GET /api/health
+│   ├── network.js  # GET /api/network
+│   ├── onchain-stats.js
+│   ├── blobs/recent.js
+│   ├── blobs/history.js
+│   ├── nodes.js / nodes/[id].js
+│   ├── wallet/[address].js
+│   ├── contract/resources.js
+│   └── upload.js   # 501 — uploads are unavailable (see below)
+├── server.js       # Local dev server — reuses the same api/ handlers
 ├── vercel.json     # Vercel deployment config
+├── .vercelignore   # Keeps server.js out of the deployment
 └── README.md       # This file
 ```
 
@@ -54,10 +68,10 @@ Replace `YOUR_USERNAME` with your GitHub username.
 1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
 2. Click **Add New → Project**
 3. Import your `shelby-hub` repository
-4. Leave all settings as default (Vercel auto-detects static sites)
+4. Leave all settings as default — Vercel auto-detects the static files and the Serverless Functions in `api/`
 5. Click **Deploy**
 
-Your site will be live at `https://shelby-hub.vercel.app` in about 30 seconds.
+Your site will be live at the domain Vercel assigns (e.g. `https://shelby-hub-black.vercel.app`) in about a minute.
 
 **Option B — Vercel CLI**
 
@@ -76,27 +90,26 @@ Follow the prompts — it will link to your GitHub repo and deploy automatically
 
 ## Local development
 
-No build tools needed — this is a plain HTML/CSS/JS project.
-
 ```bash
-# Option 1: Python (built-in)
-python3 -m http.server 3000
-
-# Option 2: Node.js
-npx serve .
-
-# Option 3: VS Code
-# Install the "Live Server" extension and click "Go Live"
+npm install
+npm start
+# → http://localhost:3000
 ```
 
-Then open [http://localhost:3000](http://localhost:3000)
+`server.js` is a thin Express wrapper around the same handlers in `api/`, so local behaviour matches the deployed site. (A plain static server such as `python3 -m http.server` will serve the pages but not `/api/*`, so the tracker will show the API as unavailable.)
+
+Development mode (auto-restarts on file changes):
+
+```bash
+npm run dev
+```
 
 ## Tech stack
 
 - Plain HTML, CSS, JavaScript frontend — no framework, no build step
-- **Express.js** backend API server — bridges browser to Shelby SDK
-- **`@shelby/sdk`** — official Shelby TypeScript SDK (Node.js)
-- **`@aptos-labs/ts-sdk`** — Aptos blockchain client
+- **Vercel Serverless Functions** (`api/`) — one file per endpoint, Node 22
+- **Shelbynet indexer** (GraphQL) + **Shelbynet REST API** — live chain data, plain `fetch`, no SDK
+- **Express.js** — local dev server only (`server.js`)
 - [Chart.js](https://www.chartjs.org/) — charts and graphs
 - [Tabler Icons](https://tabler.io/icons) — icon set
 - [DM Sans](https://fonts.google.com/specimen/DM+Sans) — font
@@ -107,14 +120,26 @@ Then open [http://localhost:3000](http://localhost:3000)
 ```
 Browser (index.html + app.js)
         ↕ fetch /api/*
-Express server (server.js)
-        ↕ @shelby/sdk
-Shelby RPC  (api.testnet.shelby.xyz)
-        ↕ @aptos-labs/ts-sdk
-Aptos Indexer  (api.testnet.aptoslabs.com)
+Vercel Serverless Functions (api/*.js, shared api/_lib.js)
+        ↕ GraphQL + REST
+Shelbynet indexer (api.shelbynet.shelby.xyz/v1/graphql)
+Shelbynet REST    (api.shelbynet.shelby.xyz/v1)
 ```
 
-The tracker shows **live data** when the server is running, and gracefully falls back to simulated data when offline. Each metric card shows a green `●LIVE` dot when sourced from the real network.
+The Shelby contract (`0x85fd…8e6a`) lives on **shelbynet**, Shelby's own Aptos-based chain — not on Aptos testnet. All live data comes from shelbynet.
+
+### What is live, and what is not
+
+Live from public APIs: recent transactions, transaction rate, protocol epochs (audit / payment / staking), contract resources, and per-wallet activity.
+
+Not available from any public API, shown as "—" or an empty state:
+
+- **Total blobs / storage used** — the indexer has no aggregates for transactions, the contract stores blobs in tables with no published counter, and the `@shelby/sdk` package (which exposed these counts) no longer exists on npm.
+- **Storage-provider node list** — no provider registry exists on-chain.
+- **14-day history** — the indexer caps list queries at 100 rows and the chain does ~80 Shelby transactions per minute, so only a recent sample (~1 minute) can be fetched per call. The chart shows that live sample instead.
+- **Latency / audit pass rate** — latency is not measurable from public APIs; audit transactions are protocol-level and extremely rare.
+
+Uploads are unavailable on the hosted dashboard for the same SDK reason (the current upload path is the S3-compatible endpoint at `s3.beta.shelby.xyz`, which needs per-bucket credentials from `console.shelby.xyz`).
 
 ## Setup & run
 
@@ -122,8 +147,11 @@ The tracker shows **live data** when the server is running, and gracefully falls
 # 1. Install dependencies
 npm install
 
-# 2. (Optional) set your API key as env var instead of hardcoding
-export SHELBY_API_KEY=aptoslabs_xxxxx
+# 2. (Optional) API key — the shelbynet indexer and REST API work
+#    without one. If you have an Aptos API key, set it as an env var
+#    (or as a Vercel env var named SHELBY_API_KEY for the deployment).
+#    NEVER commit a key to the repo.
+export SHELBY_API_KEY=your_aptos_api_key
 
 # 3. Start the server
 npm start
@@ -132,6 +160,10 @@ npm start
 # Development mode (auto-restarts on file changes)
 npm run dev
 ```
+
+### Security note
+
+An Aptos API key was previously hardcoded in `server.js` and this README and committed to the public repo. If you have not already done so, **rotate that key** (revoke it in your Aptos / Geomi dashboard and issue a new one) — a committed key must be treated as leaked even after it is removed from the code.
 
 ## Developer
 

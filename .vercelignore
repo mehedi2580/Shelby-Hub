@@ -1,0 +1,3 @@
+# Local-dev server — the deployed site uses the Serverless Functions in api/.
+# Excluding it also keeps it from being served as a downloadable static file.
+server.js
