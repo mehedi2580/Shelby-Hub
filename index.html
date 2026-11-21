@@ -75,7 +75,7 @@
         <span class="page-title">Testnet tracker</span>
         <span class="badge">Early access</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div class="top-row-actions">
         <a class="refresh-btn" href="https://explorer.shelby.xyz/shelbynet" target="_blank" rel="noopener" style="text-decoration:none">
           <i class="ti ti-radar" aria-hidden="true"></i> Explorer
         </a>
@@ -318,7 +318,7 @@
         <span class="page-title">My wallet</span>
         <span class="badge badge-blue" id="wallet-status-badge">Not connected</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div class="top-row-actions">
         <button class="refresh-btn" id="walletRefreshBtn" onclick="loadWalletData()" style="display:none">
           <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
         </button>
@@ -661,7 +661,7 @@
             <option value="&gt;">&gt;</option>
             <option value="&gt;=">&gt;=</option>
           </select>
-          <input type="number" id="alert-threshold" class="wallet-input" placeholder="12" style="width:80px;flex-shrink:0" />
+          <input type="number" id="alert-threshold" class="wallet-input" placeholder="12" />
           <button class="wallet-connect-btn wallet-connect-btn-blue" onclick="addAlert()" style="white-space:nowrap;flex-shrink:0">
             <i class="ti ti-bell-plus" aria-hidden="true"></i> Add
           </button>

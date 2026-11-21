@@ -73,6 +73,9 @@
 
 html { scroll-behavior: smooth; }
 body { background: var(--bg); color: var(--text-primary); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+/* Never allow sideways scroll from long content on small screens.
+   `clip` (unlike `hidden`) keeps the sticky navbar working. */
+html, body { overflow-x: clip; }
 
 /* ===== NAVBAR ===== */
 .navbar {
@@ -143,6 +146,7 @@ body { background: var(--bg); color: var(--text-primary); font-size: 14px; line-
 
 /* ===== COMMON ===== */
 .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+.top-row-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .top-row-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .page-title { font-size: 16px; font-weight: 500; color: var(--text-primary); }
 .section-hd { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -194,7 +198,7 @@ body { background: var(--bg); color: var(--text-primary); font-size: 14px; line-
 .status-box-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
 .status-box-text { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
 .status-box-text strong { color: var(--text-primary); font-weight: 500; }
-.status-box-text code { font-size: 11px; background: var(--bg-card); padding: 1px 5px; border-radius: 4px; color: var(--text-primary); }
+.status-box-text code { font-size: 11px; background: var(--bg-card); padding: 1px 5px; border-radius: 4px; color: var(--text-primary); overflow-wrap: anywhere; }
 
 /* ===== LIVE DOT ===== */
 .live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
@@ -210,7 +214,7 @@ body { background: var(--bg); color: var(--text-primary); font-size: 14px; line-
 
 /* ===== CHARTS ===== */
 .chart-wrap { position: relative; width: 100%; height: 180px; }
-.chart-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: var(--text-secondary); }
+.chart-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 11px; color: var(--text-secondary); flex-wrap: wrap; }
 .chart-legend span { display: flex; align-items: center; gap: 4px; }
 .legend-sq { display: inline-block; width: 10px; height: 2px; border-radius: 2px; }
 
@@ -241,7 +245,7 @@ body { background: var(--bg); color: var(--text-primary); font-size: 14px; line-
 .feed-row { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border-light); font-size: 12px; }
 .feed-row:last-child { border-bottom: none; }
 .feed-icon { font-size: 15px; color: var(--text-tertiary); flex-shrink: 0; margin-top: 1px; }
-.feed-text { color: var(--text-primary); flex: 1; }
+.feed-text { color: var(--text-primary); flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .feed-node { color: var(--text-tertiary); }
 .feed-time { color: var(--text-tertiary); white-space: nowrap; }
 
@@ -275,6 +279,7 @@ body { background: var(--bg); color: var(--text-primary); font-size: 14px; line-
   box-shadow: var(--shadow-sm); transition: background 0.15s;
 }
 a.arch-item:hover { background: var(--bg-secondary); }
+.arch-item > div { min-width: 0; }
 .arch-num {
   width: 24px; height: 24px; border-radius: 50%;
   background: var(--accent); color: #fff;
@@ -403,7 +408,8 @@ a.arch-item:hover { background: var(--bg-secondary); }
   flex: 1; padding: 9px 12px;
   border: 1px solid var(--border); border-radius: var(--radius-md);
   background: var(--bg-secondary); color: var(--text-primary);
-  font-size: 12px; font-family: monospace;
+  /* 16px stops iOS Safari auto-zooming the page when the field is focused */
+  font-size: 16px; font-family: monospace;
   outline: none; transition: border-color 0.15s;
 }
 .wallet-input:focus { border-color: var(--accent); }
@@ -539,10 +545,11 @@ canvas, .bar-fill, .node-card-clickable { transition: none !important; }
 .alert-select {
   padding: 8px 10px; border: 1px solid var(--border);
   border-radius: var(--radius-md); background: var(--bg-secondary);
-  color: var(--text-primary); font-size: 13px; font-family: inherit;
+  color: var(--text-primary); font-size: 16px; font-family: inherit;
   outline: none; cursor: pointer;
   transition: border-color 0.15s;
 }
+#alert-threshold { width: 80px; flex-shrink: 0; }
 .alert-select:focus { border-color: var(--accent); }
 
 .alert-item {
@@ -679,4 +686,31 @@ canvas, .bar-fill, .node-card-clickable { transition: none !important; }
   .onchain-stat:first-child .onchain-stat-label { justify-content: center; }
   .onchain-stat-divider { display: none; }
   .onchain-stat-val { font-size: 22px; }
+}
+
+/* ===== MOBILE PASS (Nov 2026) ===== */
+@media (max-width: 480px) {
+  /* Navbar: brand + 3 icon buttons must fit even at 320px wide.
+     The wallet pill is hidden here — My wallet is reachable from the drawer. */
+  .navbar { padding: 10px 12px; }
+  .nav-subtitle { display: none; }
+  .wallet-nav-btn { display: none !important; }
+
+  /* More room for content */
+  .page { padding: 14px 12px; }
+  .info-hero, .dev-hero, .wallet-connect-hero { padding: 16px; }
+
+  /* Action buttons get their own full-width row under the title */
+  .top-row-actions { flex: 1 1 100%; }
+
+  /* 44px-ish touch targets */
+  .nav-item { padding: 11px 12px; }
+  .refresh-btn { min-height: 36px; }
+  .hamburger { padding: 9px 11px; }
+
+  /* Util bars: narrower label so the bar itself stays visible */
+  .bar-label { width: 84px; font-size: 11px; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Alert threshold input goes full width in the stacked layout */
+  #alert-threshold { width: 100%; }
 }
